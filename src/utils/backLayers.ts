@@ -10,6 +10,9 @@
 
 export const LAYER_STATE_KEY = 'rectaLayer';
 
+/** Início, the only screen where the back button leaves the app. */
+export const HOME_PATH = '/app';
+
 /** The layers open now, oldest first. Adds `id` on top; an id already open is not added twice. */
 export function pushLayer(stack: readonly string[], id: string): string[] {
   return stack.includes(id) ? [...stack] : [...stack, id];
@@ -73,15 +76,28 @@ export function shellNavigation(currentPath: string, targetPath: string, sheetOp
   return sheetOpen ? 'replace' : 'push';
 }
 
-export type BackAction = 'closeLayer' | 'historyBack' | 'exit';
+export type BackAction = 'closeLayer' | 'historyBack' | 'goHome' | 'exit';
+
+/** Whether `pathname` is a screen of the app other than Início (`/app/...`). Início itself (`/app`, `/app/`) is not. */
+export function isScreenOffHome(pathname: string | null | undefined): boolean {
+  if (typeof pathname !== 'string') return false;
+  return pathname.startsWith(HOME_PATH + '/') && pathname.length > HOME_PATH.length + 1;
+}
 
 /**
- * What the Android back button does, decided by the page: close the layer on top, go back in the history, or leave
- * the app. `historyIndex` is react-router's `history.state.idx` (0 on the first entry of the app). The WebView's own
- * canGoBack() is not used: the page knows its own entries, and the device check could not confirm canGoBack() counts them.
+ * What the Android back button does, decided by the page: close the layer on top, go back in the history, go to
+ * Início, or leave the app. `historyIndex` is react-router's `history.state.idx` (0 on the first entry of the app).
+ * With no earlier entry, a screen of the app other than Início goes to Início, so the app only leaves from Início (or
+ * from a page outside the app, like the login). The WebView's own canGoBack() is not used: the page knows its own
+ * entries, and the device check could not confirm canGoBack() counts them.
  */
-export function backAction(stack: readonly string[], historyIndex: number | null | undefined): BackAction {
+export function backAction(
+  stack: readonly string[],
+  historyIndex: number | null | undefined,
+  pathname?: string | null,
+): BackAction {
   if (stack.length > 0) return 'closeLayer';
   if (typeof historyIndex === 'number' && historyIndex > 0) return 'historyBack';
+  if (isScreenOffHome(pathname)) return 'goHome';
   return 'exit';
 }
