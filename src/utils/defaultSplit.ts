@@ -49,9 +49,11 @@ export function defaultSharesToSend(draft: DefaultSplitDraft, stored: readonly D
   const hadSplit = (stored?.length ?? 0) > 0;
   if (!draft.editable) return { ok: true, value: undefined };
   if (!isExpense || !draft.personId) return { ok: true, value: hadSplit ? null : undefined };
-  if (!draft.percent.trim()) return { ok: true, value: [{ personId: draft.personId, percent: 100 }] };
-  const percent = parsePercent(draft.percent);
+  const percent = draft.percent.trim() ? parsePercent(draft.percent) : 100;
   if (percent === null) return { ok: false, error: 'percent' };
+  // Unchanged split: not sent, so editing another field never trips on a person deactivated since
+  const only = stored?.length === 1 ? stored[0]! : null;
+  if (only && only.personId === draft.personId && only.percent === percent) return { ok: true, value: undefined };
   return { ok: true, value: [{ personId: draft.personId, percent }] };
 }
 
