@@ -221,6 +221,7 @@ const Captures = () => {
                   busy={confirmTransfer.isPending || busyFor(item.id) !== null}
                   onConfirm={(body) => void handleConfirmTransfer(body)}
                   onDismissBoth={() => void handleDismissBoth(item)}
+                  onDismissOne={() => void handleDismiss(item)}
                 />
               ) : undefined}
             />

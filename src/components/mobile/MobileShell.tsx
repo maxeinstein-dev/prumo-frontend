@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart3, CreditCard, List, LogOut, LucideIcon, MessageCircle, MessageSquare, Plus, TrendingUp, User, Users, X } from 'lucide-react';
+import { BarChart3, CreditCard, List, LogOut, LucideIcon, MessageCircle, MessageSquare, Plus, RefreshCw, TrendingUp, User, Users, X } from 'lucide-react';
 import { useI18n } from '../../context/I18nContext';
 import { cashFlowText } from '../../utils/cashFlowTexts';
 import { incomeText } from '../../utils/incomeTexts';
@@ -9,6 +10,8 @@ import TransactionModal, { type TransactionModalPrefill } from '../TransactionMo
 import AddTransactionSheet from './AddTransactionSheet';
 import MonthSelector from './MonthSelector';
 import { useBackLayer } from '../../hooks/useBackLayer';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
+import { pullLabel } from '../../utils/pullToRefresh';
 import { shellNavigation } from '../../utils/backLayers';
 import {
   MORE_ITEMS,
@@ -96,6 +99,12 @@ const MobileShell = ({
   // The full form opened from the add sheet, with the values typed there.
   const [fullForm, setFullForm] = useState<{ prefill: TransactionModalPrefill } | null>(null);
   const moreCloseRef = useRef<HTMLButtonElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const queryClient = useQueryClient();
+  // Pull to refresh: refetch what the screen shows. A request already in flight is kept (cancelRefetch: false), and a
+  // second pull while this one runs is ignored (usePullToRefresh), so the API never gets a pile of repeated requests.
+  const pull = usePullToRefresh(mainRef, () => queryClient.refetchQueries({ type: 'active' }, { cancelRefetch: false }));
+  const pullText = pullLabel(pull.phase);
 
   const screen = screenForPath(pathname);
   const activeTab = tabForPath(pathname);
@@ -143,7 +152,25 @@ const MobileShell = ({
         <div className="flex h-11 w-11 flex-none items-center justify-center [&_button]:flex [&_button]:h-11 [&_button]:w-11 [&_button]:items-center [&_button]:justify-center [&_button]:p-0">{invitesNotification}</div>
       </header>
 
-      <main id="main-content" role="main" className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <main ref={mainRef} id="main-content" role="main" className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div
+          aria-hidden={pull.phase === 'idle'}
+          data-testid="pull-to-refresh"
+          className="flex items-end justify-center overflow-hidden text-xs font-medium text-rc-ink2"
+          style={{ height: pull.phase === 'refreshing' ? 40 : pull.distance, transition: pull.phase === 'pulling' || pull.phase === 'ready' ? 'none' : 'height 150ms ease-out' }}
+        >
+          {pull.phase !== 'idle' && (
+            <span className="flex items-center gap-1.5 pb-2">
+              <RefreshCw
+                aria-hidden="true"
+                className={`h-4 w-4 ${pull.phase === 'refreshing' ? 'animate-spin' : ''}`}
+                style={pull.phase === 'refreshing' ? undefined : { transform: `rotate(${pull.distance * 3}deg)` }}
+              />
+              {pullText}
+            </span>
+          )}
+        </div>
+        <p role="status" aria-live="polite" className="sr-only">{pull.phase === 'refreshing' ? pullText : ''}</p>
         <div className="px-4 pb-32 pt-4">{children}</div>
       </main>
 
