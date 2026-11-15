@@ -41,20 +41,20 @@ const CaptureTransferBlock = ({ item, accounts, canEdit, busy, onConfirm, onDism
       </p>
       <p className="text-xs text-rc-ink2">A saída e a entrada deste Pix viram uma transferência: sem receita nem despesa.</p>
       <div className="grid grid-cols-2 gap-2">
-        <label htmlFor={ids.from} className="text-xs text-rc-ink2">
-          De
+        <div>
+          <label htmlFor={ids.from} className="text-xs text-rc-ink2">De</label>
           <select id={ids.from} value={fromAccountId} disabled={!canEdit || busy} onChange={(e) => setFrom(e.target.value)} className={SELECT} aria-describedby={hint ? ids.hint : undefined}>
             <option value="">Escolher</option>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
-        </label>
-        <label htmlFor={ids.to} className="text-xs text-rc-ink2">
-          Para
+        </div>
+        <div>
+          <label htmlFor={ids.to} className="text-xs text-rc-ink2">Para</label>
           <select id={ids.to} value={toAccountId} disabled={!canEdit || busy} onChange={(e) => setTo(e.target.value)} className={SELECT} aria-describedby={hint ? ids.hint : undefined}>
             <option value="">Escolher</option>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
-        </label>
+        </div>
       </div>
       {hint && <p id={ids.hint} className="text-xs font-medium text-rc-amber">{hint}</p>}
       {canEdit && (
