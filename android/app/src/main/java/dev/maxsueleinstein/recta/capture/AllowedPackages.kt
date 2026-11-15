@@ -15,19 +15,14 @@ object AllowedPackages {
     val ALLOWED: Set<String> = setOf(NUBANK, MERCADO_PAGO, GMAIL)
 
     /**
-     * Senders (the title of a Gmail notification) whose e-mails are read: Google Pay, Mercado Pago and banks, decided by
-     * the user on 15/11/2026, XP left out until there are sample e-mails. Every other e-mail is dropped on the phone, so
-     * the preview of a personal e-mail never leaves it. The same list is on the server (parsers/gmail.ts), which refuses
-     * the others too. Whole name, without case or extra spaces: "Inter" is a sender, "Internacional FC" is not.
+     * Senders (the title of a Gmail notification) whose e-mails are read: only the ones that have a reader on the server,
+     * Google Pay and Mercado Pago (decided on 15/11/2026, after the review). A bank enters this list together with its
+     * reader, written from sample e-mails. Every other e-mail is dropped on the phone, so its text never leaves it. The
+     * same list is on the server (parsers/gmail.ts), which also stores no e-mail that no reader understands.
      */
     val GMAIL_SENDERS: Set<String> = setOf(
         "Google Pay",
         "Mercado Pago",
-        "Nubank",
-        "Inter",
-        "Banco Inter",
-        "PagBank",
-        "PagSeguro",
     ).map(::normalizeSender).toSet()
 
     /** Exact match on the package name; null, blank or a look-alike id is refused. */
