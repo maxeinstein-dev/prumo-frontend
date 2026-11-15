@@ -13,6 +13,8 @@ interface CaptureTransferBlockProps {
   busy: boolean;
   onConfirm: (body: TransferBody) => void;
   onDismissBoth: () => void;
+  /** Dismisses only this capture, when the pair is wrong (e.g. an e-mail that repeats another notification). */
+  onDismissOne: () => void;
 }
 
 /**
@@ -21,7 +23,7 @@ interface CaptureTransferBlockProps {
  * "Descartar as duas" dismisses both. The accounts come from the two suggestions and can be changed here, so a Google
  * Pay Pix (which names no bank) is filled in place. Used by the captures page and by the phone's capture box.
  */
-const CaptureTransferBlock = ({ item, accounts, canEdit, busy, onConfirm, onDismissBoth }: CaptureTransferBlockProps) => {
+const CaptureTransferBlock = ({ item, accounts, canEdit, busy, onConfirm, onDismissBoth, onDismissOne }: CaptureTransferBlockProps) => {
   const initial = transferAccounts(item);
   const [fromAccountId, setFrom] = useState<string>(initial.fromAccountId ?? '');
   const [toAccountId, setTo] = useState<string>(initial.toAccountId ?? '');
@@ -76,6 +78,16 @@ const CaptureTransferBlock = ({ item, accounts, canEdit, busy, onConfirm, onDism
             {busy ? 'Lançando…' : 'Lançar transferência'}
           </button>
         </div>
+      )}
+      {canEdit && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onDismissOne}
+          className={`${TOUCH} w-full text-center text-xs font-medium text-rc-ink2 underline-offset-2 hover:underline disabled:opacity-50`}
+        >
+          Não é este par: descartar só esta
+        </button>
       )}
     </div>
   );

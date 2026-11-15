@@ -188,6 +188,7 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
                     busy={busy || confirmTransfer.isPending}
                     onConfirm={(body) => void handleConfirmTransfer(body)}
                     onDismissBoth={() => void handleDismissBoth(item)}
+                    onDismissOne={() => void handleDismiss(item)}
                   />
                 </div>
               ) : (
