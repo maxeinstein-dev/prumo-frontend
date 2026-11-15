@@ -9,3 +9,29 @@ export const refundToSend = (type: string, checked: boolean): boolean | undefine
 
 /** Width (%) of a budget progress bar: it stops at zero (a negative spending after a refund) and at one hundred. */
 export const budgetBarWidth = (percentage: number): number => (Number.isFinite(percentage) ? Math.max(0, Math.min(percentage, 100)) : 0);
+
+/**
+ * Which categories the picker offers: a refund keeps the category of the purchase it cancels, so it lists the EXPENSE
+ * categories even though the row is an INCOME; on a card only expense categories exist; otherwise the type decides.
+ */
+export const categoryListType = (o: { isRefund: boolean; type: string; isCreditCardContext: boolean }): 'INCOME' | 'EXPENSE' | undefined => {
+  if (o.isRefund || o.isCreditCardContext) return 'EXPENSE';
+  if (o.type === 'INCOME') return 'INCOME';
+  if (o.type === 'EXPENSE') return 'EXPENSE';
+  return undefined;
+};
+
+/** True when the chosen category does not fit the form any more and must be cleared (a refund only loses an income category). */
+export const categoryMustBeCleared = (o: {
+  type: string;
+  isRefund: boolean;
+  isCreditCardContext: boolean;
+  categoryIsIncome: boolean;
+  categoryIsExpense: boolean;
+}): boolean => {
+  if (o.isRefund || o.isCreditCardContext) return o.categoryIsIncome;
+  return (o.type === 'INCOME' && !o.categoryIsIncome) || (o.type === 'EXPENSE' && !o.categoryIsExpense);
+};
+
+/** The type follows the category (an expense category makes an expense) except for a refund, which is an income in an expense category. */
+export const shouldAutoAdjustType = (isRefund: boolean): boolean => !isRefund;

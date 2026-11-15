@@ -159,7 +159,7 @@ export const SpendingHeatmapWidget = ({
   }, [monthStart, monthEnd, spendingByDayOfMonth]);
 
   const getIntensity = (amount: number): number => {
-    if (amount === 0) return 0;
+    if (amount <= 0) return 0; // a refund can leave a day below zero: drawn as a day with no spending
     const intensity = Math.min(amount / maxAmount, 1);
     return Math.ceil(intensity * 4); // 0-4 levels (5 níveis total)
   };

@@ -39,6 +39,7 @@ import CategoryCombobox from '../CategoryCombobox';
 import type { TransactionModalPrefill } from '../TransactionModal';
 import { QuickSplitPills } from '../people/QuickSplitPills';
 import { RefundField } from '../transactions/RefundField';
+import { categoryListType } from '../../utils/refund';
 import { usePeople, usePutTransactionShares, type Person } from '../../hooks/api/usePeople';
 import { quickSplitBody, quickSplitPerson, readLastSplitPerson, writeLastSplitPerson, type QuickSplit } from '../../utils/defaultSplit';
 
@@ -93,9 +94,10 @@ const AddTransactionSheet = ({ onClose, onOpenFullForm }: AddTransactionSheetPro
   const splitPerson = chosen ?? quickSplitPerson(people, readLastSplitPerson());
   const amountRef = useRef<HTMLInputElement>(null);
 
-  const apiType = state.type === 'INCOME' ? CategoryType.INCOME : CategoryType.EXPENSE;
+  // A refund keeps the category of the purchase: it lists the expense categories (utils/refund.ts)
+  const apiType = categoryListType({ isRefund, type: state.type, isCreditCardContext: false }) === 'INCOME' ? CategoryType.INCOME : CategoryType.EXPENSE;
   const storage = typeof window !== 'undefined' ? window.localStorage : null;
-  const categoryKey = recentStorageKey(householdId ?? '', state.type, 'category');
+  const categoryKey = recentStorageKey(householdId ?? '', apiType === CategoryType.INCOME ? 'INCOME' : 'EXPENSE', 'category');
   const accountKey = recentStorageKey(householdId ?? '', state.type, 'account');
 
   const { data: customCategories = [] } = useCategories({ householdId: householdId ?? undefined, type: apiType });
@@ -300,7 +302,15 @@ const AddTransactionSheet = ({ onClose, onOpenFullForm }: AddTransactionSheetPro
 
         {state.type === 'INCOME' && (
           <div className="mt-3">
-            <RefundField checked={isRefund} onChange={setIsRefund} />
+            <RefundField
+              checked={isRefund}
+              onChange={(checked) => {
+                setIsRefund(checked);
+                // The categories on offer change (expense ones for a refund): the chosen one no longer fits
+                setState((prev) => ({ ...prev, category: '' }));
+                setShowOtherCategory(false);
+              }}
+            />
           </div>
         )}
 
@@ -380,7 +390,7 @@ const AddTransactionSheet = ({ onClose, onOpenFullForm }: AddTransactionSheetPro
               value={state.category}
               onValueChange={(value: string) => setState((prev) => ({ ...prev, category: value }))}
               placeholder="Escolha uma categoria"
-              type={state.type === 'INCOME' ? TransactionType.INCOME : TransactionType.EXPENSE}
+              type={apiType === CategoryType.INCOME ? TransactionType.INCOME : TransactionType.EXPENSE}
               householdId={householdId ?? undefined}
               allowCreate
             />
