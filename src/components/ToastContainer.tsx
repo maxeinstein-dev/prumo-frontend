@@ -47,7 +47,11 @@ export const ToastContainer = ({ toasts, onRemove }: ToastContainerProps) => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[110] w-full max-w-sm space-y-2">
+    // Below the phone's status bar inside the Android app (env() is 0 in the browser, so the desktop keeps top-4).
+    <div
+      className="fixed right-4 z-[110] w-full max-w-sm space-y-2"
+      style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
+    >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
