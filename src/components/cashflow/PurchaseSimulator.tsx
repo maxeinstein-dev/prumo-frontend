@@ -58,6 +58,8 @@ export default function PurchaseSimulator({ open, onClose, currency }: PurchaseS
     [accountsQuery.data],
   );
   const money = (value: number): string => formatCurrency(value, currency);
+  // In the table the column headings carry the unit, so the cells drop the currency symbol to fit a phone
+  const plain = (value: number): string => money(value).replace(/[^\d.,\-−]/g, '');
   const result: PurchaseSimulation | undefined = simulation.data;
   const rows = useMemo(() => (result ? simulationRows(result) : []), [result]);
   const summary = useMemo(() => (result ? simulationSummary(result, money) : null), [result, currency]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -123,7 +125,7 @@ export default function PurchaseSimulator({ open, onClose, currency }: PurchaseS
             <select id="sim-account" value={accountId} onChange={(e) => setAccountId(e.target.value)} className={FIELD}>
               <option value="">Não informar</option>
               {accounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
+                <option key={a.id} value={a.id}>{a.type === AccountType.CREDIT ? `${a.name} (cartão)` : a.name}</option>
               ))}
             </select>
             <p className="mt-1 text-xs text-rc-ink2">Num cartão, a primeira parcela cai na fatura que o fechamento define.</p>
@@ -157,31 +159,31 @@ export default function PurchaseSimulator({ open, onClose, currency }: PurchaseS
               </ul>
             )}
 
-            <div className="overflow-x-auto rounded-xl border border-rc-line bg-rc-card">
-              <table className="w-full min-w-[22rem] text-sm tabular-nums">
+            <div className="overflow-hidden rounded-xl border border-rc-line bg-rc-card">
+              <table className="w-full table-fixed text-xs tabular-nums sm:text-sm">
                 <thead>
                   <tr className="text-left text-xs text-rc-ink2">
-                    <th scope="col" className="px-3 py-2 font-medium">Mês</th>
-                    <th scope="col" className="px-2 py-2 text-right font-medium">Já comprometido</th>
-                    <th scope="col" className="px-2 py-2 text-right font-medium">Parcela nova</th>
-                    <th scope="col" className="px-2 py-2 text-right font-medium">Total</th>
-                    <th scope="col" className="px-3 py-2 text-right font-medium">Sobra</th>
+                    <th scope="col" className="w-[17%] px-2 py-2 font-medium">Mês</th>
+                    <th scope="col" className="px-1 py-2 text-right font-medium">Já lançado</th>
+                    <th scope="col" className="px-1 py-2 text-right font-medium">Parcela</th>
+                    <th scope="col" className="px-1 py-2 text-right font-medium">Total</th>
+                    <th scope="col" className="px-2 py-2 text-right font-medium">Sobra</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row) => (
                     <tr key={row.month} data-testid={`sim-row-${row.month}`} data-over-budget={row.overBudget} className={`border-t border-rc-line ${row.overBudget ? 'bg-rc-red-soft text-rc-red' : ''}`}>
-                      <th scope="row" className="px-3 py-2 text-left font-medium">{row.label}</th>
-                      <td className="px-2 py-2 text-right">{money(row.committed)}</td>
-                      <td className="px-2 py-2 text-right">{row.hasInstallment ? money(row.newInstallment) : '—'}</td>
-                      <td className="px-2 py-2 text-right font-semibold">{money(row.total)}</td>
-                      <td className={`px-3 py-2 text-right font-semibold ${row.leftoverNegative ? 'text-rc-red' : ''}`}>{money(row.leftover)}</td>
+                      <th scope="row" className="px-2 py-2 text-left font-medium">{row.label}</th>
+                      <td className="px-1 py-2 text-right">{plain(row.committed)}</td>
+                      <td className="px-1 py-2 text-right">{row.hasInstallment ? plain(row.newInstallment) : '—'}</td>
+                      <td className="px-1 py-2 text-right font-semibold">{plain(row.total)}</td>
+                      <td className={`px-2 py-2 text-right font-semibold ${row.leftoverNegative ? 'text-rc-red' : ''}`}>{plain(row.leftover)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-rc-ink2">{summary.incomeNote}</p>
+            <p className="text-xs text-rc-ink2">Valores em reais. {summary.incomeNote}</p>
           </section>
         )}
       </div>
