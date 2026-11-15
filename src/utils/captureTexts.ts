@@ -41,6 +41,12 @@ export const CAPTURE_TEXTS_PT = {
   captureBatteryHint:
     'Escolha "Todos os apps", encontre o Recta e marque "Não otimizar". No One UI, tire também o Recta de "Apps em suspensão".',
 
+  captureNoticesTitle: 'Avisos de compra',
+  captureNoticesOn: 'Ligados',
+  captureNoticesOff: 'Desligados',
+  captureNoticesHint: 'Mostra "Compra de R$ X capturada: confirmar?" quando o Recta lê uma compra; o toque abre a caixa de capturas.',
+  captureNoticesAllow: 'Permitir avisos',
+
   captureQueueTitle: 'Fila de envio',
   capturePending: 'Pendentes',
   captureSent: 'Enviadas',

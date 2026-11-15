@@ -48,6 +48,12 @@ export interface CaptureReaderPlugin {
   getQueueState(): Promise<QueueState>;
   sendNow(): Promise<void>;
   getDeviceName(): Promise<{ name: string }>;
+  /** P01 D3: the purchase notices (permission on Android 13+). */
+  getNoticeState(): Promise<{ enabled: boolean }>;
+  requestNoticePermission(): Promise<{ enabled: boolean }>;
+  /** P01 D3: the screen a tap on a notice asked for; taking it clears it. */
+  takeOpenRequest(): Promise<{ target: string | null }>;
+  addListener(event: 'openRequest', listener: () => void): Promise<import('@capacitor/core').PluginListenerHandle>;
 }
 
 export type LinkErrorCode = 'invalid-api-url' | 'invalid-token' | 'plugin-failed';
