@@ -45,6 +45,7 @@ import { monthCloseText } from "../utils/monthCloseTexts";
 import { netWorthText } from "../utils/netWorthTexts";
 import { incomeText } from "../utils/incomeTexts";
 import { isNativeApp } from "../native/captureReader";
+import { useNativeOpenRequests } from "../native/nativeOpen";
 import MobileShell from "./mobile/MobileShell";
 import { SelectedMonthProvider } from "../context/SelectedMonthContext";
 import { useIsMobileShell } from "../hooks/useIsMobileShell";
@@ -68,6 +69,8 @@ const Layout = () => {
   const isMobile = useIsMobileShell();
   const location = useLocation();
   const navigate = useNavigate();
+  // P01 D3: a tap on the "compra capturada" notice opens the capture box.
+  useNativeOpenRequests(navigate);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);

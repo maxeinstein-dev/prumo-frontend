@@ -13,9 +13,12 @@ import kotlinx.coroutines.withContext
 /** How a run ended, for the worker: DONE (nothing left to do or nothing can be done), RETRY (try again later), STOPPED (auth). */
 enum class UploadResult { DONE, RETRY, STOPPED }
 
-/** One POST to /captures. Returns the HTTP status; throws [IOException] when there was no answer. */
+/** The answer of one POST: the status, and the body of a 2xx answer (null otherwise, or when it was too long). */
+data class TransportResponse(val status: Int, val body: String?)
+
+/** One POST to /captures. Throws [IOException] when there was no answer. */
 fun interface CaptureTransport {
-    fun post(url: String, token: String, body: ByteArray): Int
+    fun post(url: String, token: String, body: ByteArray): TransportResponse
 }
 
 /**
@@ -23,7 +26,7 @@ fun interface CaptureTransport {
  * take about a minute. The token goes in the Authorization header and nowhere else; nothing is logged.
  */
 class HttpCaptureTransport : CaptureTransport {
-    override fun post(url: String, token: String, body: ByteArray): Int {
+    override fun post(url: String, token: String, body: ByteArray): TransportResponse {
         val connection = URL(url).openConnection() as HttpURLConnection
         try {
             connection.requestMethod = "POST"
@@ -37,12 +40,22 @@ class HttpCaptureTransport : CaptureTransport {
             connection.setRequestProperty("Authorization", "Bearer $token")
             connection.outputStream.use { it.write(body) }
             val status = connection.responseCode
-            // Read the answer to the end so the connection can be reused; its content is not needed (any 2xx is a success).
+            // Read the answer to the end so the connection can be reused. Only a 2xx body is kept: it carries the notices
+            // of new spendings (P01 D3). Any 2xx is still a success, whatever the body says.
+            val kept = java.io.ByteArrayOutputStream()
+            var tooLong = false
             (if (status >= 400) connection.errorStream else connection.inputStream)?.use { stream ->
                 val buffer = ByteArray(4096)
-                while (stream.read(buffer) != -1) { /* drain */ }
+                while (true) {
+                    val read = stream.read(buffer)
+                    if (read == -1) break
+                    if (status in 200..299 && !tooLong) {
+                        if (kept.size() + read > MAX_BODY_BYTES) tooLong = true else kept.write(buffer, 0, read)
+                    }
+                }
             }
-            return status
+            val answer = if (status in 200..299 && !tooLong) kept.toString(Charsets.UTF_8.name()) else null
+            return TransportResponse(status, answer)
         } finally {
             connection.disconnect()
         }
@@ -51,6 +64,8 @@ class HttpCaptureTransport : CaptureTransport {
     private companion object {
         const val CONNECT_TIMEOUT_MS = 30_000
         const val READ_TIMEOUT_MS = 90_000
+        /** 50 results with a notice each stay far below this. */
+        const val MAX_BODY_BYTES = 256 * 1024
     }
 }
 
@@ -94,7 +109,7 @@ object CaptureUploader {
             val rows = dao.pending(CaptureBatch.MAX_ITEMS)
             if (rows.isEmpty()) break
             batches += 1
-            val step = sendRows(rows, url, token, dao, config, transport)
+            val step = sendRows(context, rows, url, token, dao, config, transport)
             if (step != UploadResult.DONE) {
                 result = step
                 break
@@ -108,6 +123,7 @@ object CaptureUploader {
 
     /** Sends [rows] as one batch; on a refusal of a batch, row by row. Returns DONE when every row was settled. */
     private suspend fun sendRows(
+        context: Context,
         rows: List<CapturedNotificationEntity>,
         url: String,
         token: String,
@@ -117,11 +133,12 @@ object CaptureUploader {
     ): UploadResult {
         val ids = rows.map { it.id }
         val body = CaptureBatch.toJson(rows.map { it.toItem() }).toByteArray(Charsets.UTF_8)
-        val status: Int = try {
+        val response: TransportResponse = try {
             withContext(Dispatchers.IO) { transport.post(url, token, body) }
         } catch (e: IOException) {
             return settleRetry(ids, "Network error (${e.javaClass.simpleName})", dao, config)
         }
+        val status = response.status
         val outcome = RetryPolicy.classify(status)
 
         // Writes are not cancellable: once the answer is known, the queue must reflect it.
@@ -132,6 +149,13 @@ object CaptureUploader {
                     dao.markSent(ids, now)
                     config.lastSentAtMillis = now
                     if (config.errorCode() != "AUTH") config.clearError()
+                    // P01 D3: a new spending the server understood becomes a local notice. A notice that fails to show
+                    // never undoes the delivery.
+                    try {
+                        CaptureNotifier.show(context, CaptureNoticeJson.parse(response.body))
+                    } catch (e: Exception) {
+                        /* the rows are delivered; the notice is a convenience */
+                    }
                     UploadResult.DONE
                 }
                 Action.KEEP_AND_RETRY -> settleRetry(ids, "HTTP $status", dao, config)
@@ -143,7 +167,7 @@ object CaptureUploader {
                 Action.SPLIT -> {
                     var split = UploadResult.DONE
                     for (row in rows) {
-                        val one = sendRows(listOf(row), url, token, dao, config, transport)
+                        val one = sendRows(context, listOf(row), url, token, dao, config, transport)
                         if (one != UploadResult.DONE) {
                             split = one
                             break

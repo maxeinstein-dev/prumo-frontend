@@ -1,5 +1,6 @@
 package dev.maxsueleinstein.recta.capture
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
@@ -11,7 +12,10 @@ import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
+import com.getcapacitor.PermissionState
 import com.getcapacitor.annotation.CapacitorPlugin
+import com.getcapacitor.annotation.Permission
+import com.getcapacitor.annotation.PermissionCallback
 import org.json.JSONObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,12 +27,53 @@ import kotlinx.coroutines.launch
  * The bridge the web layer sees as `CaptureReader`. It never returns the device token: the web side hands it over once
  * ([configure]) and from then on only the native side uses it. Errors carry fixed messages, never token or notification text.
  */
-@CapacitorPlugin(name = "CaptureReader")
+@CapacitorPlugin(
+    name = "CaptureReader",
+    permissions = [Permission(alias = CaptureReaderPlugin.NOTICES, strings = [Manifest.permission.POST_NOTIFICATIONS])],
+)
 class CaptureReaderPlugin : Plugin() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun load() {
         UploadScheduler.schedulePeriodic(context)
+    }
+
+    /**
+     * P01 D3: a tap on the capture notice. MainActivity stores the target here ([requestOpen]); the page takes it with
+     * [takeOpenRequest], on start and whenever the "openRequest" event says a new one arrived (the app was open).
+     */
+    fun requestOpen(target: String) {
+        pendingOpen = target
+        notifyListeners("openRequest", JSObject())
+    }
+
+    /** { target }: the screen a tap on a notice asked for ("captures"), or null; taking it clears it. */
+    @PluginMethod
+    fun takeOpenRequest(call: PluginCall) {
+        val target = pendingOpen
+        pendingOpen = null
+        call.resolve(JSObject().put("target", target ?: JSONObject.NULL))
+    }
+
+    /** { enabled }: whether the purchase notices can show (permission on Android 13+, and notifications not blocked). */
+    @PluginMethod
+    fun getNoticeState(call: PluginCall) {
+        call.resolve(JSObject().put("enabled", CaptureNotifier.canNotify(context)))
+    }
+
+    /** Asks for the notification permission (Android 13+) and answers { enabled }. */
+    @PluginMethod
+    fun requestNoticePermission(call: PluginCall) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || getPermissionState(NOTICES) == PermissionState.GRANTED) {
+            call.resolve(JSObject().put("enabled", CaptureNotifier.canNotify(context)))
+            return
+        }
+        requestPermissionForAlias(NOTICES, call, "onNoticePermission")
+    }
+
+    @PermissionCallback
+    private fun onNoticePermission(call: PluginCall) {
+        call.resolve(JSObject().put("enabled", CaptureNotifier.canNotify(context)))
     }
 
     override fun handleOnDestroy() {
@@ -145,6 +190,14 @@ class CaptureReaderPlugin : Plugin() {
     fun getDeviceName(call: PluginCall) {
         val name = listOf(Build.MANUFACTURER, Build.MODEL).filter { !it.isNullOrBlank() }.joinToString(" ").take(100)
         call.resolve(JSObject().put("name", name.ifBlank { "Android" }))
+    }
+
+    companion object {
+        const val NOTICES = "notices"
+
+        /** Kept outside the instance: the tap can come before the bridge has loaded the plugin. */
+        @Volatile
+        var pendingOpen: String? = null
     }
 
     private fun launchSettings(call: PluginCall, intent: Intent) {

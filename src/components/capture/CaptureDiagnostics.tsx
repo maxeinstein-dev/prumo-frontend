@@ -58,11 +58,16 @@ const CaptureDiagnosticsPanel = () => {
   const [snapshot, setSnapshot] = useState<DiagnosticsSnapshot | null>(null);
   const [busy, setBusy] = useState<'link' | 'unlink' | 'send' | null>(null);
   const [unlinkFailed, setUnlinkFailed] = useState(false);
+  const [noticesEnabled, setNoticesEnabled] = useState<boolean | null>(null);
   const mounted = useRef(true);
 
   const refresh = useCallback(async () => {
     const next = await readDiagnostics(CaptureReader);
-    if (mounted.current) setSnapshot(next);
+    const notices = await CaptureReader.getNoticeState().catch(() => null);
+    if (mounted.current) {
+      setSnapshot(next);
+      setNoticesEnabled(notices ? notices.enabled : null);
+    }
   }, []);
 
   useEffect(() => {
@@ -153,6 +158,18 @@ const CaptureDiagnosticsPanel = () => {
       if (mounted.current) setBusy(null);
       // The send runs in the background: look again shortly, and the timer keeps looking after that.
       window.setTimeout(() => void refresh(), 2500);
+    }
+  };
+
+  const handleAllowNotices = async () => {
+    try {
+      const { enabled } = await CaptureReader.requestNoticePermission();
+      // Refused for good: the system no longer asks, so the switch is in the app info screen.
+      if (!enabled) await CaptureReader.openAppDetailsSettings();
+    } catch {
+      showError(tx('captureOpenFailed'));
+    } finally {
+      await refresh();
     }
   };
 
@@ -260,6 +277,21 @@ const CaptureDiagnosticsPanel = () => {
           <button type="button" className={BTN_SECONDARY_SM} onClick={open(() => CaptureReader.openBatterySettings())}>
             {tx('captureBatteryOpen')}
           </button>
+        </div>
+
+        <div className="py-3">
+          <div className={ROW_CLS}>
+            <span className={LABEL_CLS}>{tx('captureNoticesTitle')}</span>
+            <span className={VALUE_CLS}>
+              {noticesEnabled == null ? '…' : noticesEnabled ? tx('captureNoticesOn') : tx('captureNoticesOff')}
+            </span>
+          </div>
+          <p className={`text-xs font-light mb-2 ${MUTED_CLS}`}>{tx('captureNoticesHint')}</p>
+          {noticesEnabled === false && (
+            <button type="button" className={BTN_SECONDARY_SM} onClick={() => void handleAllowNotices()}>
+              {tx('captureNoticesAllow')}
+            </button>
+          )}
         </div>
 
         <div className="py-3">

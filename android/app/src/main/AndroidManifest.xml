@@ -51,4 +51,6 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- P01 D3: the local notice "Compra de R$ X capturada: confirmar?" (asked at run time on Android 13+). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
