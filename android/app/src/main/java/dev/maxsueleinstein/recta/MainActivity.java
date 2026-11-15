@@ -19,7 +19,8 @@ public class MainActivity extends BridgeActivity {
             @Override
             public void handleOnBackPressed() {
                 getBridge().eval("(window.__rectaNativeBack ? window.__rectaNativeBack() : 'exit')", result -> {
-                    if (result == null || result.contains("exit")) {
+                    // Exact match: "confirmExit" (the first back on Início) must not leave.
+                    if (result == null || result.replace("\"", "").trim().equals("exit")) {
                         setEnabled(false);
                         MainActivity.this.getOnBackPressedDispatcher().onBackPressed();
                         setEnabled(true);

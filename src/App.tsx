@@ -10,7 +10,7 @@ import { ConfettiProvider } from './context/ConfettiContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { I18nProvider } from './context/I18nContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { useNativeBackHome } from './native/nativeBack';
+import { useNativeBackBridge } from './native/nativeBack';
 import { DemoBlurProvider } from './context/DemoBlurContext';
 import { queryClient } from './lib/queryClient';
 import Layout from './components/Layout';
@@ -177,8 +177,8 @@ const PrivateRoutesWrapper = ({ children }: { children: ReactNode }) => {
 function AppRoutes() {
   const { isMaintenanceMode, endTime } = useMaintenanceMode();
   const location = useLocation();
-  // The Android back button goes to Início through the router (see native/nativeBack.ts).
-  useNativeBackHome();
+  // The Android back button goes to Início and shows "toque de novo para sair" (see native/nativeBack.ts).
+  useNativeBackBridge();
 
   // Se estiver em manutenção, mostrar o modal apenas em login e rotas autenticadas (não na landing page)
   const isLandingPage = location.pathname === '/' || location.pathname === '/home';

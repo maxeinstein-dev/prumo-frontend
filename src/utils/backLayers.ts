@@ -76,7 +76,15 @@ export function shellNavigation(currentPath: string, targetPath: string, sheetOp
   return sheetOpen ? 'replace' : 'push';
 }
 
-export type BackAction = 'closeLayer' | 'historyBack' | 'goHome' | 'exit';
+export type BackAction = 'closeLayer' | 'historyBack' | 'goHome' | 'confirmExit' | 'exit';
+
+/** How long after the "toque de novo para sair" notice a second back on Início leaves the app. */
+export const EXIT_CONFIRM_MS = 2000;
+
+/** Whether `pathname` is Início (`/app` or `/app/`). */
+export function isHome(pathname: string | null | undefined): boolean {
+  return pathname === HOME_PATH || pathname === HOME_PATH + '/';
+}
 
 /** Whether `pathname` is a screen of the app other than Início (`/app/...`). Início itself (`/app`, `/app/`) is not. */
 export function isScreenOffHome(pathname: string | null | undefined): boolean {
@@ -86,17 +94,31 @@ export function isScreenOffHome(pathname: string | null | undefined): boolean {
 
 /**
  * What the Android back button does, decided by the page: close the layer on top, go back in the history, go to
- * Início, or leave the app. `historyIndex` is react-router's `history.state.idx` (0 on the first entry of the app).
- * With no earlier entry, a screen of the app other than Início goes to Início, so the app only leaves from Início (or
- * from a page outside the app, like the login). The WebView's own canGoBack() is not used: the page knows its own
- * entries, and the device check could not confirm canGoBack() counts them.
+ * Início, ask to confirm leaving, or leave the app. `historyIndex` is react-router's `history.state.idx` (0 on the first
+ * entry of the app).
+ *
+ * - A layer open (sheet, menu, modal) closes first, on any screen.
+ * - On Início the app leaves with two backs: the first one shows "toque de novo para sair" ('confirmExit') and a second
+ *   one within EXIT_CONFIRM_MS of it (`lastExitPromptAt`, same clock as `now`) leaves. The tabs visited before are not
+ *   walked back, as is usual on Android.
+ * - On another screen of the app the back goes back in the history; with no earlier entry it goes to Início.
+ * - Outside the app (login, landing) the first entry leaves at once.
+ *
+ * The WebView's own canGoBack() is not used: the page knows its own entries.
  */
 export function backAction(
   stack: readonly string[],
   historyIndex: number | null | undefined,
   pathname?: string | null,
+  now?: number,
+  lastExitPromptAt?: number | null,
 ): BackAction {
   if (stack.length > 0) return 'closeLayer';
+  if (isHome(pathname)) {
+    const elapsed =
+      typeof now === 'number' && typeof lastExitPromptAt === 'number' ? now - lastExitPromptAt : Number.NaN;
+    return elapsed >= 0 && elapsed < EXIT_CONFIRM_MS ? 'exit' : 'confirmExit';
+  }
   if (typeof historyIndex === 'number' && historyIndex > 0) return 'historyBack';
   if (isScreenOffHome(pathname)) return 'goHome';
   return 'exit';
