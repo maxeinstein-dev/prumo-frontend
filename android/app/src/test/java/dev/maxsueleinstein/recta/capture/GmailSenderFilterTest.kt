@@ -7,7 +7,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Gmail is read only for Google Pay, Mercado Pago and bank senders (decided on 15/11/2026); invented texts only. */
+/** Gmail is read only for the senders that have a reader, Google Pay and Mercado Pago (15/11/2026); invented texts only. */
 class GmailSenderFilterTest {
     private val at = 1_700_000_000_000L
 
@@ -22,14 +22,14 @@ class GmailSenderFilterTest {
 
     @Test
     fun keepsTheEmailsOfTheListedSenders() {
-        for (sender in listOf("Google Pay", " google  pay ", "Mercado Pago", "Nubank", "Inter", "Banco Inter", "PagBank", "PagSeguro")) {
+        for (sender in listOf("Google Pay", " google  pay ", "Mercado Pago", "MERCADO PAGO")) {
             assertNotNull(sender, gmail(sender))
         }
     }
 
     @Test
     fun dropsAnyOtherEmailBeforeItIsStored() {
-        for (sender in listOf("Maria Silva", "XP Investimentos", "XP", "Internacional FC", "2 novas mensagens", "Google", "", "   ")) {
+        for (sender in listOf("Maria Silva", "XP Investimentos", "XP", "Nubank", "Inter", "Banco Inter", "PagBank", "PagSeguro", "Internacional FC", "2 novas mensagens", "Google", "", "   ")) {
             assertNull(sender, gmail(sender))
         }
         assertNull(gmail(null))
