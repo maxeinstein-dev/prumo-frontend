@@ -297,7 +297,7 @@ const CashFlow = () => {
 
       <div className="max-w-2xl space-y-6">
         {/* P07: at the very top, above the bills, for the account and period chosen above */}
-        <SpendableCard data={query.isError ? undefined : data} currency={currency} tx={tx} variant="web" />
+        <SpendableCard data={query.isError ? undefined : data} currency={currency} tx={tx} variant="web" simulator />
         <BillsChecklist householdId={householdId ?? undefined} accountId={accountId || undefined} />
         {body}
       </div>
