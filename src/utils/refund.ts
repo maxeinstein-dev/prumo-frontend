@@ -35,3 +35,11 @@ export const categoryMustBeCleared = (o: {
 
 /** The type follows the category (an expense category makes an expense) except for a refund, which is an income in an expense category. */
 export const shouldAutoAdjustType = (isRefund: boolean): boolean => !isRefund;
+
+/**
+ * The type the form starts with when a stored transaction is opened to edit. The card screen opens the modal with the
+ * card as default account, which forces an expense, except for a refund: it stays an income (an income that cancels
+ * an expense), or saving it would turn it into an expense and move the balance the wrong way.
+ */
+export const initialFormType = (o: { isCreditCardContext: boolean; type: string | undefined; isRefund: boolean }): string =>
+  o.isCreditCardContext && !o.isRefund ? 'EXPENSE' : (o.type || 'EXPENSE');

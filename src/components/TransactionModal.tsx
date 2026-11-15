@@ -11,7 +11,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { formatCurrency } from '../utils/format';
 import { amountChanged, followLastHint, recurrenceUpdatedMessage } from '../utils/recurringFollow';
 import { competenceToSend, defaultReferenceMonth, isMonthKey, offsetToSend } from '../utils/referenceMonth';
-import { categoryMustBeCleared, refundToSend, shouldAutoAdjustType } from '../utils/refund';
+import { categoryMustBeCleared, initialFormType, refundToSend, shouldAutoAdjustType } from '../utils/refund';
 import { Transaction, RecurringTransaction } from '../types';
 import { discountFields, emptyDraft as emptyDiscountDraft, validateDraft as validateDiscount, type EarlyDiscountDraft } from '../utils/earlyDiscount';
 import { earlyDiscountText } from '../utils/earlyDiscountTexts';
@@ -346,9 +346,8 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
       
       // Se for contexto de cartão de crédito, forçar tipo EXPENSE
       // Se a transação for INCOME ou TRANSFER, não permitir edição (será bloqueada)
-      const transactionType = isCreditCardContext 
-        ? TransactionType.EXPENSE 
-        : (transaction.type || TransactionType.EXPENSE);
+      // (a refund is the exception: it stays an income, see initialFormType)
+      const transactionType = initialFormType({ isCreditCardContext, type: transaction.type, isRefund: transaction.isRefund === true }) as TransactionType;
       
       reset({
         description: transaction.description || '',
