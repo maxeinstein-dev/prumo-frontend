@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import CaptureConfirmModal from '../captures/CaptureConfirmModal';
+import CaptureTransferBlock from '../captures/CaptureTransferBlock';
+import { hiddenPairSides, transferPairOf, type TransferBody } from '../../utils/captureTransfer';
 import { useI18n } from '../../context/I18nContext';
 import { useToastContext } from '../../context/ToastContext';
-import { useCaptures, useCapturesCount, useConfirmCapture, useDismissCapture } from '../../hooks/api/useCaptures';
+import { useCaptures, useCapturesCount, useConfirmCapture, useConfirmTransferPair, useDismissCapture } from '../../hooks/api/useCaptures';
 import { appLabel, formatCaptureDateTime, localDayKey, type CaptureItem } from '../../utils/captureInbox';
 import { oneTapConfirmBody, readingOf, warningText } from '../../utils/captureReading';
 import { captureText } from '../../utils/captureTexts';
@@ -14,7 +16,7 @@ const TOUCH = 'min-h-[44px]';
 interface MobileCaptureBoxProps {
   householdId?: string;
   /** The household's accounts, to name the suggested one as /app/captures does. */
-  accounts: Array<{ id?: string; name: string }>;
+  accounts: Array<{ id?: string; name: string; type?: string }>;
   /** Same rule as the captures page: only people who may write see the actions enabled. */
   canEdit: boolean;
 }
@@ -31,6 +33,7 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
   const count = useCapturesCount(householdId, 'PENDING');
   const confirm = useConfirmCapture();
   const dismiss = useDismissCapture();
+  const confirmTransfer = useConfirmTransferPair();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CaptureItem | null>(null);
 
@@ -51,8 +54,13 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
       }
     }
   }
+  // A Pix between own accounts shows once, on its outflow (P16); a Pix never leaves a credit card.
+  const hidden = hiddenPairSides(items);
+  const transferAccountsList = accounts
+    .filter((a): a is { id: string; name: string; type?: string } => !!a.id && a.type !== 'CREDIT')
+    .map((a) => ({ id: a.id, name: a.name }));
   const { visible, rest } = captureVisibleCount(total, open);
-  const shown = items.slice(0, visible);
+  const shown = items.filter((item) => !hidden.has(item.id)).slice(0, visible);
   const hiddenCount = Math.max(0, total - shown.length);
 
   const footerButton = `${TOUCH} flex w-full items-center text-left text-sm font-semibold text-rc-accentInk`;
@@ -107,6 +115,28 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
     }
   };
 
+  const handleConfirmTransfer = async (body: TransferBody) => {
+    if (!householdId) return;
+    try {
+      await confirmTransfer.mutateAsync({ householdId, body });
+      success('Transferência lançada.');
+    } catch (error) {
+      reportFailure(error);
+    }
+  };
+
+  const handleDismissBoth = async (item: CaptureItem) => {
+    if (!householdId) return;
+    const pair = transferPairOf(item);
+    try {
+      await dismiss.mutateAsync({ id: item.id, householdId });
+      if (pair) await dismiss.mutateAsync({ id: pair.captureId, householdId });
+      success(tx('captureDismissedToast'));
+    } catch (error) {
+      reportFailure(error);
+    }
+  };
+
   return (
     <section aria-labelledby="mobile-capture-title" className="mt-3 rounded-[22px] border-[1.5px] border-rc-accentInk bg-rc-card p-4">
       <div className="flex items-center gap-2">
@@ -148,7 +178,19 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
               <p className="truncate text-[12.5px] text-rc-ink3">
                 {captureLineMeta(typeLabel, accountName, formatCaptureDateTime(item.postedAt))}
               </p>
-              {warning && <p className="mt-1 text-[12.5px] font-medium text-rc-amber">{warning}</p>}
+              {warning && !transferPairOf(item) && <p className="mt-1 text-[12.5px] font-medium text-rc-amber">{warning}</p>}
+              {transferPairOf(item) ? (
+                <div className="mt-2">
+                  <CaptureTransferBlock
+                    item={item}
+                    accounts={transferAccountsList}
+                    canEdit={canEdit}
+                    busy={busy || confirmTransfer.isPending}
+                    onConfirm={(body) => void handleConfirmTransfer(body)}
+                    onDismissBoth={() => void handleDismissBoth(item)}
+                  />
+                </div>
+              ) : (
               <div className="mt-2 flex gap-2">
                 <button
                   type="button"
@@ -169,6 +211,7 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
                   {oneTap ? 'Lançar' : 'Completar'}
                 </button>
               </div>
+              )}
             </li>
           );
         })}

@@ -42,6 +42,8 @@ export interface CaptureItem {
   parsed: unknown;
   transactionId: string | null;
   suggestion: CaptureSuggestion;
+  /** P16: the other side of a possible Pix between own accounts (GET /captures only; null or absent otherwise). */
+  transferPair?: { captureId: string; side: 'out' | 'in'; partnerAccountId: string | null } | null;
 }
 
 /** The form state of a capture. `amount` is null while empty; `date` is YYYY-MM-DD in the device's zone. */
