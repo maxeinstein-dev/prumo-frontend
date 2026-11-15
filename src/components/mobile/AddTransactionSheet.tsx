@@ -38,6 +38,7 @@ import { DatePicker } from '../DatePicker';
 import CategoryCombobox from '../CategoryCombobox';
 import type { TransactionModalPrefill } from '../TransactionModal';
 import { QuickSplitPills } from '../people/QuickSplitPills';
+import { RefundField } from '../transactions/RefundField';
 import { usePeople, usePutTransactionShares, type Person } from '../../hooks/api/usePeople';
 import { quickSplitBody, quickSplitPerson, readLastSplitPerson, writeLastSplitPerson, type QuickSplit } from '../../utils/defaultSplit';
 
@@ -83,6 +84,7 @@ const AddTransactionSheet = ({ onClose, onOpenFullForm }: AddTransactionSheetPro
   const [showOtherCategory, setShowOtherCategory] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [isRefund, setIsRefund] = useState(false); // an income that cancels an expense (income only)
   // P19: one-tap split with the last person used
   const { data: people = [] } = usePeople(householdId ?? undefined);
   const putShares = usePutTransactionShares();
@@ -167,6 +169,7 @@ const AddTransactionSheet = ({ onClose, onOpenFullForm }: AddTransactionSheetPro
   const pickType = (type: 'EXPENSE' | 'INCOME') => {
     if (type === state.type) return;
     setState((prev) => ({ ...prev, type, category: '' }));
+    setIsRefund(false);
     setShowOtherCategory(false);
   };
 
@@ -219,6 +222,7 @@ const AddTransactionSheet = ({ onClose, onOpenFullForm }: AddTransactionSheetPro
         ...data,
         category: data.category || undefined,
         competenceMonth: null,
+        ...(state.type === 'INCOME' && isRefund && { isRefund: true }),
       } as Parameters<typeof addTransaction>[0]);
       remember(state.category, state.accountId);
       if (shares && splitPerson) {
@@ -293,6 +297,12 @@ const AddTransactionSheet = ({ onClose, onOpenFullForm }: AddTransactionSheetPro
             Transferência
           </button>
         </div>
+
+        {state.type === 'INCOME' && (
+          <div className="mt-3">
+            <RefundField checked={isRefund} onChange={setIsRefund} />
+          </div>
+        )}
 
         <label className="mt-4 flex items-baseline gap-2">
           <span className="text-2xl font-semibold text-rc-ink3">{currencySymbol}</span>
