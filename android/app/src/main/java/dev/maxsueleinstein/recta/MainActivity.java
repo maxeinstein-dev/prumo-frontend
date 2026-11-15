@@ -5,6 +5,7 @@ import android.os.Bundle;
 import androidx.activity.OnBackPressedCallback;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.PluginHandle;
+import dev.maxsueleinstein.recta.capture.CaptureOpen;
 import dev.maxsueleinstein.recta.capture.CaptureNotifier;
 import dev.maxsueleinstein.recta.capture.CaptureReaderPlugin;
 
@@ -14,7 +15,8 @@ public class MainActivity extends BridgeActivity {
         // Local plugins must be registered before super.onCreate() builds the bridge.
         registerPlugin(CaptureReaderPlugin.class);
         super.onCreate(savedInstanceState);
-        handleOpenRequest(getIntent());
+        // A recreated Activity (rotation, process restored) already handled the request it was started with.
+        if (CaptureOpen.readsLaunchRequest(savedInstanceState != null)) handleOpenRequest(getIntent());
         // Capacitor 8 core registers no back handling, so the Activity finished on every back press. The back button
         // asks the page (window.__rectaNativeBack, see src/native/nativeBack.ts): the page closes its layer or goes back
         // in its own history, and only answers "exit" when there is nothing left, then the Activity leaves as usual.

@@ -87,10 +87,11 @@ object CaptureNotifier {
     }
 
     private fun openCapturesIntent(context: Context): PendingIntent? {
-        val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
-        launch.putExtra(EXTRA_OPEN, OPEN_CAPTURES)
-        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        return PendingIntent.getActivity(context, 0, launch, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        // Explicit, so the request reaches onNewIntent also when the app is in the background (see CaptureOpen).
+        val open = Intent(context, CaptureOpen.TARGET)
+        open.putExtra(EXTRA_OPEN, OPEN_CAPTURES)
+        open.addFlags(CaptureOpen.FLAGS)
+        return PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
 
     private fun ensureChannel(context: Context) {

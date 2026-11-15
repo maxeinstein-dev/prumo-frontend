@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { TransferBody } from '../../utils/captureTransfer';
 import { useAuth } from '../../context/AuthContext';
 import { apiClient } from '../../utils/api';
 import type { CaptureItem, CaptureStatus, ConfirmBody } from '../../utils/captureInbox';
@@ -93,6 +94,19 @@ export function useConfirmCapture() {
       // P19: a split sent with the confirm changes the balances of people
       if (input.body.shares) queryClient.invalidateQueries({ queryKey: ['people'] });
     },
+  });
+}
+
+/**
+ * POST /captures/transfer (P16): an outflow capture and an own-income capture of the same Pix confirmed as one transfer
+ * between two accounts. Idempotent on the server, so a double tap cannot create two.
+ */
+export function useConfirmTransferPair() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { householdId?: string; body: TransferBody }) =>
+      apiClient.post(withHousehold('/captures/transfer', input.householdId), input.body),
+    onSettled: () => invalidateCaptureChange(queryClient),
   });
 }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useI18n } from '../../context/I18nContext';
 import { formatCurrency } from '../../utils/format';
 import { AlertTriangle } from 'lucide-react';
@@ -6,6 +6,7 @@ import { appLabel, formatCaptureDateTime, type CaptureItem } from '../../utils/c
 import { METHOD_TEXT, canConfirmInOneTap, fallbackCategory, readingOf, warningText } from '../../utils/captureReading';
 import { captureText, type CaptureTextKey } from '../../utils/captureTexts';
 import { BTN_PRIMARY, BTN_SECONDARY, MUTED_CLS } from '../people/ui';
+import { duplicateNote } from '../../utils/captureTransfer';
 
 /** Long texts start folded: three lines, with a button that opens the rest. */
 const FOLD_AFTER_CHARS = 140;
@@ -25,13 +26,15 @@ interface CaptureCardProps {
   onEdit: () => void;
   onDismiss: () => void;
   onRestore: () => void;
+  /** P16: a Pix between own accounts is offered as one transfer; the block replaces the usual actions. */
+  transfer?: ReactNode;
 }
 
 /**
  * One capture in the inbox. The primary action sits full width at the top of the actions, so it is in thumb reach on a
  * phone: one tap when the suggestion is complete, otherwise it opens the form filled with what there is.
  */
-const CaptureCard = ({ item, accountName, categoryLabel, canEdit, busy, onConfirm, onEdit, onDismiss, onRestore }: CaptureCardProps) => {
+const CaptureCard = ({ item, accountName, categoryLabel, canEdit, busy, onConfirm, onEdit, onDismiss, onRestore, transfer }: CaptureCardProps) => {
   const { t } = useI18n();
   const tx = (key: CaptureTextKey) => captureText(t, key);
   const [expanded, setExpanded] = useState(false);
@@ -49,6 +52,7 @@ const CaptureCard = ({ item, accountName, categoryLabel, canEdit, busy, onConfir
   const category = categoryValue ? categoryLabel(categoryValue) : null;
   const method = reading.method ? METHOD_TEXT[reading.method] ?? null : null;
   const warning = warningText(reading.warning);
+  const repeat = dismissed ? duplicateNote(item) : null;
 
   return (
     <li className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-3">
@@ -134,12 +138,15 @@ const CaptureCard = ({ item, accountName, categoryLabel, canEdit, busy, onConfir
             <span>{warning}. Confira antes de confirmar.</span>
           </p>
         )}
-        {!dismissed && hasAnySuggestion && !complete && (
+        {repeat && <p className={`mt-2 text-xs font-light ${MUTED_CLS}`}>{repeat}</p>}
+        {!dismissed && !transfer && hasAnySuggestion && !complete && (
           <p className={`mt-2 text-xs font-light ${MUTED_CLS}`}>{tx('captureIncompleteSuggestion')}</p>
         )}
       </div>
 
-      {canEdit && !dismissed && (
+      {!dismissed && transfer}
+
+      {canEdit && !dismissed && !transfer && (
         <div className="space-y-2">
           <button
             type="button"
