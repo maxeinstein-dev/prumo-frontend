@@ -4,15 +4,16 @@ import { useI18n } from '../../context/I18nContext';
 interface TransactionModalHeaderProps {
   title: string;
   onClose: () => void;
+  titleId?: string;
   readOnly?: boolean;
 }
 
-export const TransactionModalHeader = ({ title, onClose, readOnly: _readOnly }: TransactionModalHeaderProps) => {
+export const TransactionModalHeader = ({ title, onClose, titleId, readOnly: _readOnly }: TransactionModalHeaderProps) => {
   const { t } = useI18n();
 
   return (
     <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
-      <h3 className="text-xl font-light tracking-tight text-gray-900 dark:text-white">
+      <h3 id={titleId} className="text-xl font-light tracking-tight text-gray-900 dark:text-white">
         {title}
       </h3>
       <button
