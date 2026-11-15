@@ -106,6 +106,10 @@ export interface RecurringTransaction {
   optionalHolidays?: string[];
   /** Other names the bank or card machine prints for this charge (empty list when none). */
   aliases?: string[];
+  /** P19: default split of every occurrence (empty when none); the form sends a list, null clears. */
+  defaultShares?: import('../utils/defaultSplit').DefaultShare[];
+  /** P19, form -> context only: what to send as `defaultShares` (list, null clears, undefined keeps). */
+  defaultSharesToSend?: Array<{ personId: string; percent: number }> | null;
   /** Server-computed: what the next occurrence is expected to carry and how it was reached. */
   forecast?: ForecastDetail | null;
 }
@@ -186,7 +190,8 @@ export interface TransactionsContextType {
   accounts: Account[];
   savingsGoals: SavingsGoal[];
   loading: boolean;
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'userId'>) => Promise<void>;
+  /** Resolves with the id of the created transaction (undefined when the server did not answer one). */
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'userId'>) => Promise<string | undefined | void>;
   /** Resolves with the notice of the recurrence the server updated (phase 5), when it did. */
   updateTransaction: (id: string, transaction: Partial<Transaction>) => Promise<{ recurringUpdated?: { id: string; amount: number } } | void>;
   deleteTransaction: (id: string) => Promise<void>;

@@ -66,6 +66,8 @@ export interface ConfirmBody {
   description?: string;
   date: string;
   paid: true;
+  /** P19: "Metade com" / "É de", written by the server with the transaction (only for an expense). */
+  shares?: import('./defaultSplit').QuickSplitBody;
 }
 
 export type ConfirmBodyResult = { ok: true; body: ConfirmBody } | { ok: false; missing: CaptureDraftField[] };

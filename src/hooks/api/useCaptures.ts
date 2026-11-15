@@ -88,7 +88,11 @@ export function useConfirmCapture() {
       );
       return bodyOf<ConfirmCaptureResult>(response).data;
     },
-    onSettled: () => invalidateCaptureChange(queryClient),
+    onSettled: (_data, _error, input) => {
+      invalidateCaptureChange(queryClient);
+      // P19: a split sent with the confirm changes the balances of people
+      if (input.body.shares) queryClient.invalidateQueries({ queryKey: ['people'] });
+    },
   });
 }
 

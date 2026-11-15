@@ -317,6 +317,7 @@ const convertRecurringTransactionFromBackend = (r: BackendRecurringTransaction, 
     nonWorkingDays: r.nonWorkingDays ?? [],
     optionalHolidays: r.optionalHolidays ?? [],
     aliases: r.aliases ?? [],
+    defaultShares: r.defaultShares ?? [],
     forecast: r.forecast ?? null,
     lastOccurrenceDate: r.lastOccurrenceDate === undefined ? undefined : (r.lastOccurrenceDate ?? null),
   };
@@ -499,8 +500,8 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
                   accountsLoading || budgetsLoading || recurringLoading || savingsGoalsLoading;
 
   // Transaction functions
-  const addTransaction = useCallback(async (transaction: Omit<Transaction, 'id' | 'userId'>): Promise<void> => {
-    if (!currentUser) return;
+  const addTransaction = useCallback(async (transaction: Omit<Transaction, 'id' | 'userId'>): Promise<string | undefined> => {
+    if (!currentUser) return undefined;
 
     const categoryName = toCategoryName(transaction.category, t as unknown as Record<string, string>, custom as CustomCategoryInfo[] | undefined) ?? transaction.category;
     if (!categoryName) {
@@ -511,7 +512,7 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
     const resolvedAccountId = transaction.accountId || accounts[0]?.id || undefined;
     
     // householdId é opcional - backend criará household pessoal automaticamente se não fornecido
-    await createTransaction.mutateAsync({
+    const created = await createTransaction.mutateAsync({
       ...(householdId && { householdId }), // Only include if exists
       description: transaction.description,
       amount: transaction.amount,
@@ -534,6 +535,8 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
       !!transaction.accountId,
       transaction.paid !== false
     );
+    // P19: the add sheet splits the new expense right after (PUT shares needs its id)
+    return (created as { id?: string } | undefined)?.id;
   }, [householdId, currentUser, accounts, createTransaction, t, custom]);
 
   const updateTransactionFn = useCallback(async (id: string, transaction: Partial<Transaction>): Promise<{ recurringUpdated?: { id: string; amount: number } }> => {
@@ -710,6 +713,8 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
         earlyDiscountValue: recurring.earlyDiscountValue,
       }),
       ...(recurring.aliases !== undefined && { aliases: recurring.aliases }),
+      // P19: the form puts the list to send in defaultSharesToSend (absent or null = no split on a new recurrence)
+      ...(recurring.defaultSharesToSend && { defaultShares: recurring.defaultSharesToSend }),
       ...(recurring.forecastStrategy !== undefined && {
         forecastStrategy: recurring.forecastStrategy,
         forecastWindow: recurring.forecastWindow ?? null,
@@ -745,6 +750,8 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
     if (recurring.earlyDiscountValue !== undefined) updateData.earlyDiscountValue = recurring.earlyDiscountValue;
     // Aliases: sent whole when the form has them (an empty list clears), absent leaves the stored ones alone.
     if (recurring.aliases !== undefined) updateData.aliases = recurring.aliases;
+    // P19: a list replaces the default split, null clears it, absent leaves it alone.
+    if (recurring.defaultSharesToSend !== undefined) updateData.defaultShares = recurring.defaultSharesToSend;
     // Forecast strategy: sent whole (the form always has all of it), absent leaves the stored one alone.
     if (recurring.forecastStrategy !== undefined) {
       updateData.forecastStrategy = recurring.forecastStrategy;
