@@ -5,6 +5,7 @@ import type { UseCurrencyMaskReturn } from '../../hooks/useCurrencyMask';
 import { TransactionFormData } from '../../schemas';
 import { TransactionType, AccountType } from '../../lib/enums';
 import { formatCurrency } from '../../utils/format';
+import { categoryListType } from '../../utils/refund';
 import { parseCurrencyValue } from '../../utils/currency';
 import { getAvailableBalance } from '../../utils/accountBalance';
 import CategoryCombobox from '../CategoryCombobox';
@@ -21,6 +22,8 @@ interface TransactionBasicFieldsProps {
   accounts: Account[];
   currencyMask: UseCurrencyMaskReturn;
   isCreditCardContext?: boolean;
+  /** A refund keeps the category of the purchase: the picker lists the expense categories. */
+  isRefund?: boolean;
   disabled?: boolean;
   householdId?: string;
   /** A note under the amount (e.g. that the value will be used by the next occurrences of a recurrence). */
@@ -37,6 +40,7 @@ export const TransactionBasicFields = ({
   accounts,
   currencyMask,
   isCreditCardContext = false,
+  isRefund = false,
   disabled = false,
   householdId,
   amountHint = null,
@@ -59,13 +63,9 @@ export const TransactionBasicFields = ({
             control={control}
             render={({ field }) => {
               const transactionTypeValue = watch('type');
-              const categoryType = isCreditCardContext 
-                ? TransactionType.EXPENSE
-                : transactionTypeValue === TransactionType.INCOME 
-                  ? TransactionType.INCOME
-                  : transactionTypeValue === TransactionType.EXPENSE 
-                    ? TransactionType.EXPENSE
-                    : undefined;
+              // A refund keeps the category of the purchase: the EXPENSE categories (see utils/refund.ts)
+              const listed = categoryListType({ isRefund, type: transactionTypeValue, isCreditCardContext });
+              const categoryType = listed === 'INCOME' ? TransactionType.INCOME : listed === 'EXPENSE' ? TransactionType.EXPENSE : undefined;
               
               return (
                 <CategoryCombobox

@@ -11,6 +11,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { formatCurrency } from '../utils/format';
 import { amountChanged, followLastHint, recurrenceUpdatedMessage } from '../utils/recurringFollow';
 import { competenceToSend, defaultReferenceMonth, isMonthKey, offsetToSend } from '../utils/referenceMonth';
+import { categoryMustBeCleared, initialFormType, refundToSend, shouldAutoAdjustType } from '../utils/refund';
 import { Transaction, RecurringTransaction } from '../types';
 import { discountFields, emptyDraft as emptyDiscountDraft, validateDraft as validateDiscount, type EarlyDiscountDraft } from '../utils/earlyDiscount';
 import { earlyDiscountText } from '../utils/earlyDiscountTexts';
@@ -31,6 +32,7 @@ import {
   SplitTransactionForm,
   RecurringTransactionFields,
   ReferenceMonthField,
+  RefundField,
   InstallmentsField,
   TransactionModalFooter,
   AccountField,
@@ -90,6 +92,7 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
   const [recurringDiscount, setRecurringDiscount] = useState<EarlyDiscountDraft>(emptyDiscountDraft());
   // Reference month (competencia) of this transaction: off = the month of its date
   const [refEnabled, setRefEnabled] = useState(false);
+  const [isRefund, setIsRefund] = useState(false);
   const [refMonth, setRefMonth] = useState('');
 
   // Estados para divisão de despesas (splits)
@@ -227,14 +230,15 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
 
   // Forçar tipo EXPENSE quando for contexto de cartão de crédito
   useEffect(() => {
-    if (isCreditCardContext && transactionType !== TransactionType.EXPENSE) {
+    // (a refund on a card is an income in an expense category: it is the one case that keeps INCOME there)
+    if (isCreditCardContext && !isRefund && transactionType !== TransactionType.EXPENSE) {
       setValue('type', TransactionType.EXPENSE, { shouldValidate: true });
     }
-  }, [isCreditCardContext, transactionType, setValue]);
+  }, [isCreditCardContext, isRefund, transactionType, setValue]);
 
   // Ajustar tipo automaticamente quando categoria muda (apenas se não for cartão de crédito)
   useEffect(() => {
-    if (transactionCategory && !transaction && !isCreditCardContext) {
+    if (transactionCategory && !transaction && !isCreditCardContext && shouldAutoAdjustType(isRefund)) {
       const categoryName = getCategoryNameFromDisplay(transactionCategory, t as unknown as Record<string, string>);
       if (categoryName) {
         const incomeCategories = getCategoriesByType(CategoryType.INCOME);
@@ -244,7 +248,7 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
         }
       }
     }
-  }, [transactionCategory, transactionType, transaction, setValue, t, isCreditCardContext]);
+  }, [transactionCategory, transactionType, transaction, setValue, t, isCreditCardContext, isRefund]);
 
   // Limpar categoria se não for compatível com o tipo selecionado
   // No contexto de cartão de crédito, apenas despesas são permitidas
@@ -258,18 +262,14 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
         const isExpenseCategory = expenseCategories.includes(categoryName as CategoryName);
         
         // Se for cartão de crédito, limpar categoria se for receita
-        if (isCreditCardContext && isIncomeCategory) {
+        // Cartão: sai a categoria de receita. Estorno: só sai a de receita (guarda a categoria da compra).
+        // Demais contextos: a categoria tem de combinar com o tipo.
+        if (categoryMustBeCleared({ type: transactionType, isRefund, isCreditCardContext, categoryIsIncome: isIncomeCategory, categoryIsExpense: isExpenseCategory })) {
           setValue('category', '', { shouldValidate: true });
-        } else if (!isCreditCardContext) {
-          // Para outros contextos, validar normalmente
-          if ((transactionType === TransactionType.INCOME && !isIncomeCategory) || 
-              (transactionType === TransactionType.EXPENSE && !isExpenseCategory)) {
-            setValue('category', '', { shouldValidate: true });
-          }
         }
       }
     }
-  }, [transactionType, transactionCategory, transaction, setValue, t, isCreditCardContext]);
+  }, [transactionType, transactionCategory, transaction, setValue, t, isCreditCardContext, isRefund]);
 
   // Limpar apenas os campos do "outro" tipo ao mudar: em TRANSFER limpamos accountId/category;
   // em INCOME/EXPENSE limpamos from/to. Não limpar from/to quando é TRANSFER para não apagar
@@ -346,9 +346,8 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
       
       // Se for contexto de cartão de crédito, forçar tipo EXPENSE
       // Se a transação for INCOME ou TRANSFER, não permitir edição (será bloqueada)
-      const transactionType = isCreditCardContext 
-        ? TransactionType.EXPENSE 
-        : (transaction.type || TransactionType.EXPENSE);
+      // (a refund is the exception: it stays an income, see initialFormType)
+      const transactionType = initialFormType({ isCreditCardContext, type: transaction.type, isRefund: transaction.isRefund === true }) as TransactionType;
       
       reset({
         description: transaction.description || '',
@@ -365,10 +364,11 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
       currencyMask.setValue(amount);
       setValue('amount', amount);
       setRefEnabled(isMonthKey(transaction.competenceMonth));
+      setIsRefund(transaction.isRefund === true);
       setRefMonth(isMonthKey(transaction.competenceMonth) ? transaction.competenceMonth : defaultReferenceMonth(tDate));
       
       // Se for cartão de crédito e a transação for INCOME ou TRANSFER, limpar categoria
-      if (isCreditCardContext && (transaction.type === TransactionType.INCOME || transaction.type === TransactionType.TRANSFER)) {
+      if (isCreditCardContext && !transaction.isRefund && (transaction.type === TransactionType.INCOME || transaction.type === TransactionType.TRANSFER)) {
         setValue('category', '', { shouldValidate: true });
       }
     } else {
@@ -385,6 +385,7 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
       setRecurringNextDueDate(calculateNextDueDate(defaultDate, 'monthly'));
       setRecurringCompetenceOffset(null);
       setRefEnabled(false);
+      setIsRefund(false);
       setRefMonth(defaultReferenceMonth(defaultDate));
       // Limpar splits quando for nova transação
       setIsSplit(false);
@@ -712,6 +713,8 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
         accountId: data.accountId || undefined,
         // Reference month: the chosen month, null when the toggle is off (clears one that was set)
         competenceMonth: refCompetence,
+        // Refund marker: only an income carries it (unticking clears a marked row)
+        ...(!isRecurring && refundToSend(data.type, isRefund) !== undefined && { isRefund: refundToSend(data.type, isRefund) }),
         ...(isSplit && data.type === TransactionType.EXPENSE && isSharedHousehold && splits.length > 0 && {
           isSplit: true,
           splits: splits,
@@ -915,10 +918,23 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
               accounts={accounts}
               currencyMask={currencyMask}
               isCreditCardContext={isCreditCardContext}
+              isRefund={isRefund}
               disabled={readOnly}
               householdId={householdId ?? undefined}
               amountHint={amountHint}
             />
+
+            {(transactionType === TransactionType.INCOME || isCreditCardContext) && !isRecurring && (
+              <RefundField
+                checked={isRefund}
+                onChange={(checked) => {
+                  setIsRefund(checked);
+                  // On a card the form is always an expense: a refund there is an income, and unticking goes back
+                  if (isCreditCardContext) setValue('type', checked ? TransactionType.INCOME : TransactionType.EXPENSE, { shouldValidate: true });
+                }}
+                disabled={readOnly}
+              />
+            )}
 
             {(transactionType === TransactionType.INCOME || transactionType === TransactionType.EXPENSE) && !isRecurring && (
               <ReferenceMonthField

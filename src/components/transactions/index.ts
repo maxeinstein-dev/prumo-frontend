@@ -12,4 +12,5 @@ export { TransactionFilters } from './TransactionFilters';
 export { TransactionList } from './TransactionList';
 export { TransactionItem } from './TransactionItem';
 export { ReferenceMonthField, ReferenceOffsetField } from './ReferenceMonthField';
+export { RefundField } from './RefundField';
 export { DueToConfirmPanel } from './DueToConfirmPanel';

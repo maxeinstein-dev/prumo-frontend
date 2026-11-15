@@ -126,6 +126,7 @@ const convertTransactionFromBackend = (t: BackendTransaction, translations?: Rec
       totalInstallments: t.totalInstallments,
       notes: (t as any).notes,
       competenceMonth: t.competenceMonth ?? null,
+      isRefund: t.isRefund === true,
       isSplit: (t as any).isSplit || false,
       splits: (t as any).splits ? (t as any).splits.map((split: any) => ({
         userId: split.userId,
@@ -178,6 +179,7 @@ const convertTransactionFromBackend = (t: BackendTransaction, translations?: Rec
     totalInstallments: t.totalInstallments,
     notes: (t as any).notes,
     competenceMonth: t.competenceMonth ?? null,
+    isRefund: t.isRefund === true,
     isSplit: (t as any).isSplit || false,
     splits: (t as any).splits ? (t as any).splits.map((split: any) => ({
       userId: split.userId,
@@ -528,6 +530,7 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
       ...(transaction.installmentNumber && { installmentNumber: transaction.installmentNumber }),
       ...(transaction.totalInstallments && { totalInstallments: transaction.totalInstallments }),
       ...(transaction.competenceMonth && { competenceMonth: transaction.competenceMonth }),
+      ...(transaction.isRefund && { isRefund: true }),
     });
 
     analyticsHelpers.logTransactionCreated(
@@ -565,6 +568,8 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
     if (transaction.notes !== undefined) updateData.notes = transaction.notes || null;
     // Reference month: a 'YYYY-MM' sets it, null clears it (back to the month of the date), absent leaves it alone.
     if (transaction.competenceMonth !== undefined) updateData.competenceMonth = transaction.competenceMonth || null;
+    // Refund marker: true/false from the form (income only), absent leaves it alone
+    if (transaction.isRefund !== undefined) updateData.isRefund = transaction.isRefund;
 
     let updated;
     try {

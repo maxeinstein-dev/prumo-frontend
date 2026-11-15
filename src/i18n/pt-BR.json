@@ -24,6 +24,8 @@
   "toConfirmTitle": "A confirmar",
   "toConfirmHint": "Previstos que já deveriam ter acontecido. Confirme o valor e a data reais.",
   "referenceMonthToggle": "Referente a outro mês",
+  "refundToggle": "É estorno",
+  "refundHelp": "Não conta como receita: abate a despesa da categoria no mês.",
   "referenceMonthLabel": "Mês de referência",
   "referenceMonthHelp": "O saldo muda na data da transação; os totais do mês usam o mês de referência.",
   "referenceMonthChipTitle": "Conta para outro mês: o saldo muda na data, os relatórios do mês usam este mês.",

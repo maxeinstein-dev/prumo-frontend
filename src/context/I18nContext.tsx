@@ -41,6 +41,8 @@ export interface Translations {
   toConfirmTitle?: string;
   toConfirmHint?: string;
   referenceMonthToggle?: string;
+  refundToggle?: string;
+  refundHelp?: string;
   recurringAliasesLabel?: string;
   recurringAliasesPlaceholder?: string;
   recurringAliasesHelp?: string;

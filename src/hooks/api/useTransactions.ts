@@ -44,6 +44,8 @@ export interface Transaction {
   attachmentUrl?: string;
   /** Reference month 'YYYY-MM' (competencia); null = the month of `date`. */
   competenceMonth?: string | null;
+  /** Estorno: an INCOME that cancels an expense. */
+  isRefund?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -506,6 +508,7 @@ export function useCreateTransaction() {
       totalInstallments?: number;
       attachmentUrl?: string;
       competenceMonth?: string | null; // Reference month (INCOME/EXPENSE); null/absent = the month of the date
+      isRefund?: boolean; // Estorno (INCOME only)
     }) => {
       const response = await apiClient.post<Transaction>('/transactions', data);
       return response.data!;

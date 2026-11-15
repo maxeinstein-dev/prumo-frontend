@@ -31,6 +31,8 @@ export interface Transaction {
   notes?: string;
   /** Reference month 'YYYY-MM' (competencia): the month the money belongs to when it is not the month of `date`; null/absent = the month of the date. */
   competenceMonth?: string | null;
+  /** Estorno: an INCOME that cancels an expense; it is not income (the totals and budgets take it off the spending). */
+  isRefund?: boolean;
 }
 
 export interface Category {
