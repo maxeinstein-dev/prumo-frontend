@@ -5,6 +5,8 @@ import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import CaptureCard, { type CaptureBusy } from '../components/captures/CaptureCard';
 import CaptureConfirmModal from '../components/captures/CaptureConfirmModal';
+import CaptureTransferBlock from '../components/captures/CaptureTransferBlock';
+import { hiddenPairSides, transferPairOf, type TransferBody } from '../utils/captureTransfer';
 import { useI18n } from '../context/I18nContext';
 import { useToastContext } from '../context/ToastContext';
 import { useDefaultHousehold } from '../hooks/useDefaultHousehold';
@@ -14,6 +16,7 @@ import {
   useCaptures,
   useCapturesCount,
   useConfirmCapture,
+  useConfirmTransferPair,
   useDismissCapture,
   useRestoreCapture,
 } from '../hooks/api/useCaptures';
@@ -62,6 +65,7 @@ const Captures = () => {
   const confirm = useConfirmCapture();
   const dismiss = useDismissCapture();
   const restore = useRestoreCapture();
+  const confirmTransfer = useConfirmTransferPair();
   const { data: availableAccounts } = useAvailableAccounts(householdId ?? '', false);
   const { data: categories } = useCategories({ householdId });
 
@@ -70,8 +74,19 @@ const Captures = () => {
     for (const page of list.data?.pages ?? []) {
       for (const item of page.data) seen.set(item.id, item);
     }
-    return [...seen.values()];
+    const all = [...seen.values()];
+    // A Pix between own accounts shows once, on its outflow (P16).
+    const hidden = hiddenPairSides(all);
+    return all.filter((item) => !hidden.has(item.id));
   }, [list.data]);
+
+  // A Pix leaves from or arrives at a cash account, never a credit card.
+  const transferAccountsList = useMemo(
+    () => (availableAccounts?.accounts ?? [])
+      .filter((account) => account.id && (account as { type?: string }).type !== 'CREDIT')
+      .map((account) => ({ id: account.id as string, name: account.name })),
+    [availableAccounts],
+  );
 
   const accountName = useCallback(
     (id: string) => availableAccounts?.accounts.find((account) => account.id === id)?.name ?? null,
@@ -120,6 +135,28 @@ const Captures = () => {
     if (!householdId) return;
     try {
       await dismiss.mutateAsync({ id: item.id, householdId });
+      success(tx('captureDismissedToast'));
+    } catch (error) {
+      reportFailure(error);
+    }
+  };
+
+  const handleConfirmTransfer = async (body: TransferBody) => {
+    if (!householdId) return;
+    try {
+      await confirmTransfer.mutateAsync({ householdId, body });
+      success('Transferência lançada.');
+    } catch (error) {
+      reportFailure(error);
+    }
+  };
+
+  const handleDismissBoth = async (item: CaptureItem) => {
+    if (!householdId) return;
+    const pair = transferPairOf(item);
+    try {
+      await dismiss.mutateAsync({ id: item.id, householdId });
+      if (pair) await dismiss.mutateAsync({ id: pair.captureId, householdId });
       success(tx('captureDismissedToast'));
     } catch (error) {
       reportFailure(error);
@@ -176,6 +213,16 @@ const Captures = () => {
               onEdit={() => setEditing(item)}
               onDismiss={() => void handleDismiss(item)}
               onRestore={() => void handleRestore(item)}
+              transfer={transferPairOf(item) ? (
+                <CaptureTransferBlock
+                  item={item}
+                  accounts={transferAccountsList}
+                  canEdit={canEdit}
+                  busy={confirmTransfer.isPending || busyFor(item.id) !== null}
+                  onConfirm={(body) => void handleConfirmTransfer(body)}
+                  onDismissBoth={() => void handleDismissBoth(item)}
+                />
+              ) : undefined}
             />
           ))}
         </ul>
