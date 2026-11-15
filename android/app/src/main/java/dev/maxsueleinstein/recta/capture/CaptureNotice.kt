@@ -36,7 +36,7 @@ object CaptureNoticeText {
         val value = brl(notice.amountCents)
         return when (notice.kind) {
             "CARD_PURCHASE" -> "Compra de $value capturada: confirmar?"
-            "PIX_OUT" -> "Pix de $value capturado: confirmar?"
+            "PIX_OUT", "WALLET_PIX_OUT" -> "Pix de $value capturado: confirmar?"
             else -> "Saída de $value capturada: confirmar?"
         }
     }
