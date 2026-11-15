@@ -24,6 +24,9 @@ import SelectCombobox from '../SelectCombobox';
 import CategoryCombobox from '../CategoryCombobox';
 import { DatePicker } from '../DatePicker';
 import { DialogShell, INPUT_CLS, LABEL_CLS, BTN_PRIMARY, BTN_SECONDARY, ERROR_CLS, MUTED_CLS } from '../people/ui';
+import { QuickSplitPills } from '../people/QuickSplitPills';
+import { usePeople, type Person } from '../../hooks/api/usePeople';
+import { quickSplitBody, quickSplitPerson, readLastSplitPerson, writeLastSplitPerson, type QuickSplit } from '../../utils/defaultSplit';
 
 /** The touch target the phone needs (WCAG 2.5.5 and the Android guideline). */
 const TOUCH = 'min-h-[44px]';
@@ -62,6 +65,11 @@ const CaptureConfirmModal = ({ item, householdId, onDone, onClose }: CaptureConf
   const currency = useCurrencyMask(item.suggestion.amount ?? '');
   const [problem, setProblem] = useState<string | null>(null);
   const saving = confirm.isPending;
+  // P19: one-tap split with the last person used
+  const { data: people = [] } = usePeople(householdId);
+  const [split, setSplit] = useState<QuickSplit>('mine');
+  const [chosen, setChosen] = useState<Person | null>(null);
+  const splitPerson = chosen ?? quickSplitPerson(people, readLastSplitPerson());
 
   const set = <K extends keyof CaptureDraft>(field: K, value: CaptureDraft[K]) =>
     setDraft((current) => ({ ...current, [field]: value }));
@@ -92,8 +100,10 @@ const CaptureConfirmModal = ({ item, householdId, onDone, onClose }: CaptureConf
       return;
     }
     setProblem(null);
+    const shares = quickSplitBody(split, splitPerson, result.body.type);
     try {
-      await confirm.mutateAsync({ id: item.id, householdId, body: result.body });
+      await confirm.mutateAsync({ id: item.id, householdId, body: shares ? { ...result.body, shares } : result.body });
+      if (shares && splitPerson) writeLastSplitPerson(splitPerson.id);
       success(tx('captureConfirmedToast'));
       onDone();
     } catch (error) {
@@ -225,6 +235,26 @@ const CaptureConfirmModal = ({ item, householdId, onDone, onClose }: CaptureConf
             className={`${INPUT_CLS} ${TOUCH}`}
           />
         </div>
+
+        {draft.type === 'EXPENSE' && (
+          <QuickSplitPills
+            value={split}
+            onChange={setSplit}
+            person={splitPerson}
+            people={people}
+            onPersonChange={setChosen}
+            disabled={saving}
+            labelClass={LABEL_CLS}
+            selectClass={`${INPUT_CLS} ${TOUCH}`}
+            pillClass={(selected) =>
+              `${TOUCH} px-3 py-2 text-sm font-light rounded-full border transition-opacity disabled:opacity-50 ${
+                selected
+                  ? 'border-primary-600 dark:border-primary-500 bg-primary-600 dark:bg-primary-500 text-white'
+                  : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white'
+              }`
+            }
+          />
+        )}
 
         {problem && (
           <p role="alert" className={ERROR_CLS}>

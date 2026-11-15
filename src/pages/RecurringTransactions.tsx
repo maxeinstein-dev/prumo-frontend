@@ -27,6 +27,9 @@ import { RecurringTransactionsSkeleton } from '../components/PageSkeletons';
 import { CategoryType, getCategoriesByType, getCategoryNameFromDisplay, AccountType, TransactionType, CategoryName, RecurrenceFrequency } from '../lib/enums';
 import { DatePicker } from '../components/DatePicker';
 import { ReferenceOffsetField, RecurringAliasesField, DueToConfirmPanel } from '../components/transactions';
+import { DefaultSplitField } from '../components/transactions/DefaultSplitField';
+import { usePeople } from '../hooks/api/usePeople';
+import { defaultSharesToSend, defaultSplitSummary, draftFromDefaultShares, type DefaultSplitDraft } from '../utils/defaultSplit';
 import { EarlyDiscountField } from '../components/transactions/EarlyDiscountField';
 import { discountFields, draftFromRecurrence as discountDraftFrom, emptyDraft as emptyDiscountDraft, validateDraft as validateDiscount, type EarlyDiscountDraft } from '../utils/earlyDiscount';
 import { earlyDiscountText } from '../utils/earlyDiscountTexts';
@@ -42,6 +45,7 @@ import type { ForecastDraft } from '../utils/forecastStrategy';
 
 const RecurringTransactions = () => {
   const { householdId, household } = useDefaultHousehold();
+  const { data: people } = usePeople(householdId ?? undefined, true);
   // Creating recurrences needs EDITOR or more; a viewer only reads.
   const canWrite = canWritePeople(household);
   const [isDetectOpen, setIsDetectOpen] = useState<boolean>(false);
@@ -70,6 +74,7 @@ const RecurringTransactions = () => {
   const confirmReceipt = useConfirmReceipt();
   const [competenceOffset, setCompetenceOffset] = useState<number | null>(null);
   const [aliases, setAliases] = useState<string[]>([]);
+  const [splitDraft, setSplitDraft] = useState<DefaultSplitDraft>(draftFromDefaultShares(undefined));
   const [discountDraft, setDiscountDraft] = useState<EarlyDiscountDraft>(emptyDiscountDraft());
   const [forecastDraft, setForecastDraft] = useState<ForecastDraft>(emptyForecastDraft());
 
@@ -158,6 +163,7 @@ const RecurringTransactions = () => {
       });
       setCompetenceOffset(editingRecurring.competenceOffsetMonths ?? null);
       setAliases(editingRecurring.aliases ?? []);
+      setSplitDraft(draftFromDefaultShares(editingRecurring.defaultShares));
       setDiscountDraft(discountDraftFrom(editingRecurring));
       setForecastDraft(draftFromRecurrence(editingRecurring));
       currencyMask.setValue(editingRecurring.amount || 0);
@@ -178,6 +184,7 @@ const RecurringTransactions = () => {
       });
       setCompetenceOffset(null);
       setAliases([]);
+      setSplitDraft(draftFromDefaultShares(undefined));
       setDiscountDraft(emptyDiscountDraft());
       setForecastDraft(emptyForecastDraft());
       currencyMask.setValue('');
@@ -243,6 +250,12 @@ const RecurringTransactions = () => {
       showError(earlyDiscountText(t, discountCheck.key));
       return;
     }
+    // P19: default split (expenses only), checked before sending
+    const splitCheck = defaultSharesToSend(splitDraft, editingRecurring?.defaultShares, isExpense);
+    if (!splitCheck.ok) {
+      showError((t as unknown as Record<string, string | undefined>).defaultSplitPercentInvalid || 'Percentual entre 0,01 e 100.');
+      return;
+    }
     try {
       const recurringData: Omit<RecurringTransaction, 'id' | 'userId'> = {
         description: data.description,
@@ -261,6 +274,7 @@ const RecurringTransactions = () => {
         followLastAmount: forecastDraft.strategy === 'LAST' && data.followLastAmount === true,
         competenceOffsetMonths: offsetToSend(competenceOffset),
         aliases,
+        defaultSharesToSend: splitCheck.value,
         ...forecastPayload(forecastDraft),
         ...(discountFields(discountCheck, editingRecurring?.id ? 'update' : 'create') as Partial<RecurringTransaction>),
       };
@@ -405,6 +419,11 @@ const RecurringTransactions = () => {
                       }`}>
                         {recurring.type === TransactionType.INCOME ? t.income : t.expense}
                       </span>
+                      {defaultSplitSummary(recurring.defaultShares) && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-light border border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300">
+                          {defaultSplitSummary(recurring.defaultShares)}
+                        </span>
+                      )}
                       {!recurring.isActive && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-light border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400">
                           {t.pause}
@@ -798,6 +817,16 @@ const RecurringTransactions = () => {
               <ReferenceOffsetField value={competenceOffset} onChange={setCompetenceOffset} />
 
               <RecurringAliasesField value={aliases} onChange={setAliases} />
+
+              {watch('type') === TransactionType.EXPENSE && (
+                <DefaultSplitField
+                  value={splitDraft}
+                  onChange={setSplitDraft}
+                  people={people ?? []}
+                  stored={editingRecurring?.defaultShares}
+                  showError={submitCount > 0}
+                />
+              )}
 
               <div className="flex justify-end space-x-3 pt-6 border-t border-gray-100 dark:border-gray-800">
                 <button

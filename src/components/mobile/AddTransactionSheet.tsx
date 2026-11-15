@@ -37,6 +37,9 @@ import { simpleTransactionError } from '../../utils/simpleTransactionRules';
 import { DatePicker } from '../DatePicker';
 import CategoryCombobox from '../CategoryCombobox';
 import type { TransactionModalPrefill } from '../TransactionModal';
+import { QuickSplitPills } from '../people/QuickSplitPills';
+import { usePeople, usePutTransactionShares, type Person } from '../../hooks/api/usePeople';
+import { quickSplitBody, quickSplitPerson, readLastSplitPerson, writeLastSplitPerson, type QuickSplit } from '../../utils/defaultSplit';
 
 /** How many category pills show before "Outra…". */
 const CATEGORY_PILLS = 6;
@@ -80,6 +83,12 @@ const AddTransactionSheet = ({ onClose, onOpenFullForm }: AddTransactionSheetPro
   const [showOtherCategory, setShowOtherCategory] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // P19: one-tap split with the last person used
+  const { data: people = [] } = usePeople(householdId ?? undefined);
+  const putShares = usePutTransactionShares();
+  const [split, setSplit] = useState<QuickSplit>('mine');
+  const [chosen, setChosen] = useState<Person | null>(null);
+  const splitPerson = chosen ?? quickSplitPerson(people, readLastSplitPerson());
   const amountRef = useRef<HTMLInputElement>(null);
 
   const apiType = state.type === 'INCOME' ? CategoryType.INCOME : CategoryType.EXPENSE;
@@ -203,14 +212,27 @@ const AddTransactionSheet = ({ onClose, onOpenFullForm }: AddTransactionSheetPro
       return;
     }
     const { installments: _installments, fromAccountId: _from, toAccountId: _to, ...data } = parsed.data;
+    const shares = quickSplitBody(split, splitPerson, state.type);
     setSaving(true);
     try {
-      await addTransaction({
+      const createdId = await addTransaction({
         ...data,
         category: data.category || undefined,
         competenceMonth: null,
       } as Parameters<typeof addTransaction>[0]);
       remember(state.category, state.accountId);
+      if (shares && splitPerson) {
+        // The transaction exists: a failed split is told apart, so the user divides it from the statement instead
+        try {
+          if (!createdId) throw new Error('no id');
+          await putShares.mutateAsync({ transactionId: createdId, input: { direction: 'THEY_OWE_ME', ...shares } });
+          writeLastSplitPerson(splitPerson.id);
+        } catch {
+          showError('Lançado, mas a divisão não foi salva. Divida pelo Extrato.');
+          onClose();
+          return;
+        }
+      }
       success(t.transactionCreated);
       onClose();
     } catch (err: unknown) {
@@ -396,6 +418,22 @@ const AddTransactionSheet = ({ onClose, onOpenFullForm }: AddTransactionSheetPro
           <button type="button" aria-pressed={situationNow} onClick={() => setState((prev) => ({ ...prev, paidChoice: true }))} className={pillClass(situationNow)}>{situation.paid}</button>
           <button type="button" aria-pressed={!situationNow} onClick={() => setState((prev) => ({ ...prev, paidChoice: false }))} className={pillClass(!situationNow)}>{situation.pending}</button>
         </div>
+
+        {state.type === 'EXPENSE' && (
+          <div className="mt-4">
+            <QuickSplitPills
+              value={split}
+              onChange={setSplit}
+              person={splitPerson}
+              people={people}
+              onPersonChange={setChosen}
+              disabled={saving}
+              labelClass="text-[13px] font-medium text-rc-ink3"
+              selectClass="min-h-[44px] w-full rounded-xl border border-rc-line bg-rc-card px-3 text-[14px] text-rc-ink"
+              pillClass={pillClass}
+            />
+          </div>
+        )}
 
         <button
           type="button"

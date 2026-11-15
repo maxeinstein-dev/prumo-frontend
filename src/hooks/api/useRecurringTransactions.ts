@@ -31,6 +31,8 @@ export interface RecurringTransaction {
   nonWorkingDays?: string[];
   optionalHolidays?: string[];
   aliases?: string[];
+  /** P19: default split of every occurrence (empty when none). */
+  defaultShares?: import('../../utils/defaultSplit').DefaultShare[];
   earlyDiscountDay?: number | null;
   earlyDiscountType?: 'FIXED' | 'PERCENT' | null;
   earlyDiscountValue?: number | null;
@@ -134,6 +136,8 @@ export function useCreateRecurringTransaction() {
       nonWorkingDays?: string[];
       optionalHolidays?: string[];
       aliases?: string[];
+      /** P19: who takes a part of each occurrence; omitted = none. */
+      defaultShares?: Array<{ personId: string; percent: number }>;
       earlyDiscountDay?: number | null;
       earlyDiscountType?: 'FIXED' | 'PERCENT' | null;
       earlyDiscountValue?: number | null;
@@ -146,6 +150,8 @@ export function useCreateRecurringTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transactions', 'credit-card-invoice'] });
       queryClient.invalidateQueries({ queryKey: ['transactions', 'card-commitment'] });
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions'] });
+      // P19: an occurrence generated right away may carry the default split
+      queryClient.invalidateQueries({ queryKey: ['people'] });
       // Invalidate auth/me to refresh household list
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     },
@@ -170,6 +176,8 @@ export function useUpdateRecurringTransaction() {
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions', 'due'] });
+      // P19: an occurrence generated right away may carry the default split
+      queryClient.invalidateQueries({ queryKey: ['people'] });
     },
   });
 }
@@ -214,6 +222,7 @@ export function useExecuteRecurringTransaction() {
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions', 'due'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['people'] }); // P19: the occurrence may carry the default split
     },
   });
 }
@@ -238,6 +247,7 @@ export function usePayNextOccurrence() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] }); // lists, summaries, card invoice and commitment
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] }); // cash flow, bills, home
+      queryClient.invalidateQueries({ queryKey: ['people'] }); // P19: the occurrence may carry the default split
     },
   });
 }
