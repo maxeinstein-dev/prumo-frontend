@@ -34,6 +34,8 @@ object NotificationFilter {
     ): CaptureItem? {
         if (packageName == null || !AllowedPackages.isAllowed(packageName)) return null
         if (packageName.length > CaptureLimits.PACKAGE_MAX) return null
+        // Gmail: only Google Pay and the banks; any other e-mail goes no further than this line.
+        if (packageName == AllowedPackages.GMAIL && !AllowedPackages.isAllowedGmailSender(title)) return null
 
         val candidates = listOfNotNull(
             clean(bigText),

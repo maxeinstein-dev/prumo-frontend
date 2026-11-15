@@ -25,6 +25,7 @@ class CaptureNoticeTest {
     @Test
     fun aPixOrAnotherSpendingIsNotCalledAPurchase() {
         assertEquals("Pix de R$ 12,00 capturado: confirmar?", CaptureNoticeText.title(CaptureNoticeText.of("k", "PIX_OUT", 1200, null)!!))
+        assertEquals("Pix de R$ 12,00 capturado: confirmar?", CaptureNoticeText.title(CaptureNoticeText.of("k", "WALLET_PIX_OUT", 1200, null)!!))
         assertEquals("Saída de R$ 12,00 capturada: confirmar?", CaptureNoticeText.title(CaptureNoticeText.of("k", "DEBIT_PURCHASE_X", 1200, null)!!))
     }
 

@@ -14,8 +14,8 @@ class AllowedPackagesTest {
     }
 
     @Test
-    fun theListHoldsExactlyTheTwoBankApps() {
-        assertEquals(setOf("com.nu.production", "com.mercadopago.wallet"), AllowedPackages.ALLOWED)
+    fun theListHoldsExactlyTheTwoBankAppsAndGmail() {
+        assertEquals(setOf("com.nu.production", "com.mercadopago.wallet", "com.google.android.gm"), AllowedPackages.ALLOWED)
     }
 
     @Test
