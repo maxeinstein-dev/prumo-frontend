@@ -11,6 +11,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { formatCurrency } from '../utils/format';
 import { amountChanged, followLastHint, recurrenceUpdatedMessage } from '../utils/recurringFollow';
 import { competenceToSend, defaultReferenceMonth, isMonthKey, offsetToSend } from '../utils/referenceMonth';
+import { refundToSend } from '../utils/refund';
 import { Transaction, RecurringTransaction } from '../types';
 import { discountFields, emptyDraft as emptyDiscountDraft, validateDraft as validateDiscount, type EarlyDiscountDraft } from '../utils/earlyDiscount';
 import { earlyDiscountText } from '../utils/earlyDiscountTexts';
@@ -31,6 +32,7 @@ import {
   SplitTransactionForm,
   RecurringTransactionFields,
   ReferenceMonthField,
+  RefundField,
   InstallmentsField,
   TransactionModalFooter,
   AccountField,
@@ -90,6 +92,7 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
   const [recurringDiscount, setRecurringDiscount] = useState<EarlyDiscountDraft>(emptyDiscountDraft());
   // Reference month (competencia) of this transaction: off = the month of its date
   const [refEnabled, setRefEnabled] = useState(false);
+  const [isRefund, setIsRefund] = useState(false);
   const [refMonth, setRefMonth] = useState('');
 
   // Estados para divisão de despesas (splits)
@@ -365,6 +368,7 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
       currencyMask.setValue(amount);
       setValue('amount', amount);
       setRefEnabled(isMonthKey(transaction.competenceMonth));
+      setIsRefund(transaction.isRefund === true);
       setRefMonth(isMonthKey(transaction.competenceMonth) ? transaction.competenceMonth : defaultReferenceMonth(tDate));
       
       // Se for cartão de crédito e a transação for INCOME ou TRANSFER, limpar categoria
@@ -385,6 +389,7 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
       setRecurringNextDueDate(calculateNextDueDate(defaultDate, 'monthly'));
       setRecurringCompetenceOffset(null);
       setRefEnabled(false);
+      setIsRefund(false);
       setRefMonth(defaultReferenceMonth(defaultDate));
       // Limpar splits quando for nova transação
       setIsSplit(false);
@@ -712,6 +717,8 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
         accountId: data.accountId || undefined,
         // Reference month: the chosen month, null when the toggle is off (clears one that was set)
         competenceMonth: refCompetence,
+        // Refund marker: only an income carries it (unticking clears a marked row)
+        ...(!isRecurring && refundToSend(data.type, isRefund) !== undefined && { isRefund: refundToSend(data.type, isRefund) }),
         ...(isSplit && data.type === TransactionType.EXPENSE && isSharedHousehold && splits.length > 0 && {
           isSplit: true,
           splits: splits,
@@ -919,6 +926,10 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
               householdId={householdId ?? undefined}
               amountHint={amountHint}
             />
+
+            {transactionType === TransactionType.INCOME && !isRecurring && (
+              <RefundField checked={isRefund} onChange={setIsRefund} disabled={readOnly} />
+            )}
 
             {(transactionType === TransactionType.INCOME || transactionType === TransactionType.EXPENSE) && !isRecurring && (
               <ReferenceMonthField

@@ -3,13 +3,15 @@ import { Transaction, CategoryData, MonthlyComparison, RecurringTransaction, Acc
 import { TransactionType, AccountType } from '../lib/enums';
 import { effectiveMonthOf, monthKeyOf } from './referenceMonth';
 import { projectedOccurrenceAmount } from './forecastStrategy';
+import { isRefundTx } from './refund';
 
 export const getTotalIncome = (transactions: Transaction[] | undefined): number => {
   if (!transactions || !Array.isArray(transactions)) {
     return 0;
   }
   return transactions
-    .filter(t => t.type === TransactionType.INCOME)
+    // A refund is not income: it takes its amount off the expense (getTotalExpense)
+    .filter(t => t.type === TransactionType.INCOME && !isRefundTx(t))
     .reduce((sum, t) => sum + (t.amount || 0), 0);
 };
 
@@ -18,8 +20,8 @@ export const getTotalExpense = (transactions: Transaction[] | undefined): number
     return 0;
   }
   return transactions
-    .filter(t => t.type === TransactionType.EXPENSE)
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
+    .filter(t => t.type === TransactionType.EXPENSE || isRefundTx(t))
+    .reduce((sum, t) => sum + (isRefundTx(t) ? -(t.amount || 0) : (t.amount || 0)), 0);
 };
 
 export const getBalance = (transactions: Transaction[] | undefined): number => {
@@ -82,7 +84,9 @@ export const getTransactionsByCategory = (transactions: Transaction[] | undefine
     }
     
     // Mapear TransactionType para propriedades do objeto de dados (usado pelos gráficos)
-    if (t.type === TransactionType.INCOME) {
+    if (isRefundTx(t)) {
+      categoryMap[category].despesa -= t.amount || 0;
+    } else if (t.type === TransactionType.INCOME) {
       categoryMap[category].receita += t.amount || 0;
     } else if (t.type === TransactionType.EXPENSE) {
       categoryMap[category].despesa += t.amount || 0;

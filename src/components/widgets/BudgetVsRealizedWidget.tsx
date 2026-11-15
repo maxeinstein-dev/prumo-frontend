@@ -10,6 +10,7 @@ import { useDefaultHousehold } from '../../hooks/useDefaultHousehold';
 import { useBudgetSummary } from '../../hooks/api/useBudgets';
 import { budgetRealized, summaryMonthOf, summaryRowsByBudget } from '../../utils/budgetOwnShare';
 import { budgetsInForce } from '../../utils/budgetPeriod';
+import { budgetBarWidth } from '../../utils/refund';
 import type { BudgetStatusName } from '../../utils/budgetStatus';
 
 interface BudgetVsRealizedWidgetProps {
@@ -169,7 +170,7 @@ export const BudgetVsRealizedWidget = ({ selectedMonth, blurNumbers = false }: B
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
                 <div
                   className={`h-2 rounded-full transition-all ${colors.bar}`}
-                  style={{ width: `${Math.min(budget.percentage, 100)}%` }}
+                  style={{ width: `${budgetBarWidth(budget.percentage)}%` }}
                 />
               </div>
 

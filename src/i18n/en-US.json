@@ -24,6 +24,8 @@
   "toConfirmTitle": "To confirm",
   "toConfirmHint": "Expected items that should have happened by now. Confirm the real amount and date.",
   "referenceMonthToggle": "Refers to another month",
+  "refundToggle": "It is a refund",
+  "refundHelp": "Not income: it lowers the category spending of the month.",
   "referenceMonthLabel": "Reference month",
   "referenceMonthHelp": "The balance changes on the transaction date; month totals use the reference month.",
   "referenceMonthChipTitle": "Counts for another month: the balance changes on the date, month reports use this month.",

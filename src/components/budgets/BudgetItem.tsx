@@ -2,6 +2,7 @@ import { Budget } from '../../types';
 import { formatCurrency } from '../../utils/format';
 import { BudgetActionsMenu } from '../BudgetActionsMenu';
 import { isGeneralBudget } from '../../utils/categories';
+import { budgetBarWidth } from '../../utils/refund';
 import { ownSharePercentage } from '../../utils/budgetOwnShare';
 import { TransactionType } from '../../lib/enums';
 import type { BudgetStatusName } from '../../utils/budgetStatus';
@@ -91,7 +92,7 @@ export const BudgetItem = ({
                     budget.status === 'reached' ? 'bg-orange-500' :
                     budget.status === 'warning' ? 'bg-yellow-500' : 'bg-green-500'
                   }`}
-                  style={{ width: `${Math.min(budget.percentage, 100)}%` }}
+                  style={{ width: `${budgetBarWidth(budget.percentage)}%` }}
                 />
               </div>
               <div className="text-xs font-light text-gray-400 dark:text-gray-500">
