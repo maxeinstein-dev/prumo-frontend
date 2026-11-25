@@ -10,6 +10,7 @@ import { oneTapConfirmBody, readingOf, warningText } from '../../utils/captureRe
 import { captureText } from '../../utils/captureTexts';
 import { captureAmountSign, captureLineMeta, captureVisibleCount } from '../../utils/extratoMobile';
 import { formatCurrency } from '../../utils/format';
+import { accountLabels, type LabelAccount } from '../../utils/accountLabels';
 
 const TOUCH = 'min-h-[44px]';
 
@@ -68,9 +69,11 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
   }
   // A Pix between own accounts shows once, on its outflow (P16); a Pix never leaves a credit card.
   const hidden = hiddenPairSides(items);
+  // Accounts of the same name carry their type ("Banco X (cartão)"): P22.
+  const labels = accountLabels(accounts as LabelAccount[]);
   const transferAccountsList = accounts
     .filter((a): a is { id: string; name: string; type?: string } => !!a.id && a.type !== 'CREDIT')
-    .map((a) => ({ id: a.id, name: a.name }));
+    .map((a) => ({ id: a.id, name: a.name, label: labels.get(a.id) }));
   const { visible, rest } = captureVisibleCount(total, open);
   const shown = items.filter((item) => !hidden.has(item.id)).slice(0, visible);
   const hiddenCount = Math.max(0, total - shown.length);
@@ -185,7 +188,8 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
             : item.suggestion.type === 'EXPENSE'
               ? tx('captureFormExpense')
               : '';
-          const accountBase = accounts.find((a) => a.id === item.suggestion.accountId)?.name ?? null;
+          const suggested = item.suggestion.accountId;
+          const accountBase = (suggested ? labels.get(suggested) : null) ?? accounts.find((a) => a.id === suggested)?.name ?? null;
           const accountName = reading.cardLast4 ? `${accountBase ?? 'sem conta'} · final ${reading.cardLast4}` : accountBase;
           const busy = (confirm.isPending && confirm.variables?.id === item.id) || (dismiss.isPending && dismiss.variables?.id === item.id);
           return (

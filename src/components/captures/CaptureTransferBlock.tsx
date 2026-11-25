@@ -8,7 +8,7 @@ const SELECT = `${TOUCH} w-full rounded-xl border border-rc-line bg-rc-card px-3
 interface CaptureTransferBlockProps {
   item: TransferCaptureLike;
   /** The accounts a Pix can leave from or arrive at (no credit card). */
-  accounts: Array<{ id: string; name: string }>;
+  accounts: Array<{ id: string; name: string; label?: string }>;
   canEdit: boolean;
   busy: boolean;
   onConfirm: (body: TransferBody) => void;
@@ -47,14 +47,14 @@ const CaptureTransferBlock = ({ item, accounts, canEdit, busy, onConfirm, onDism
           <label htmlFor={ids.from} className="text-xs text-rc-ink2">De</label>
           <select id={ids.from} value={fromAccountId} disabled={!canEdit || busy} onChange={(e) => setFrom(e.target.value)} className={SELECT} aria-describedby={hint ? ids.hint : undefined}>
             <option value="">Escolher</option>
-            {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            {accounts.map((a) => <option key={a.id} value={a.id}>{a.label ?? a.name}</option>)}
           </select>
         </div>
         <div>
           <label htmlFor={ids.to} className="text-xs text-rc-ink2">Para</label>
           <select id={ids.to} value={toAccountId} disabled={!canEdit || busy} onChange={(e) => setTo(e.target.value)} className={SELECT} aria-describedby={hint ? ids.hint : undefined}>
             <option value="">Escolher</option>
-            {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            {accounts.map((a) => <option key={a.id} value={a.id}>{a.label ?? a.name}</option>)}
           </select>
         </div>
       </div>

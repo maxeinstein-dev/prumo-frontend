@@ -31,6 +31,7 @@ import {
 } from '../utils/captureInbox';
 import { captureText, type CaptureTextKey } from '../utils/captureTexts';
 import { BTN_SECONDARY } from '../components/people/ui';
+import { accountLabels, type LabelAccount } from '../utils/accountLabels';
 
 const TAB_CLS = 'min-h-[44px] flex-1 px-3 py-2 text-sm font-light rounded-md transition-colors';
 
@@ -80,17 +81,20 @@ const Captures = () => {
     return all.filter((item) => !hidden.has(item.id));
   }, [list.data]);
 
+  // Accounts of the same name carry their type ("Banco X (cartão)"): P22.
+  const labels = useMemo(() => accountLabels((availableAccounts?.accounts ?? []) as LabelAccount[]), [availableAccounts]);
+
   // A Pix leaves from or arrives at a cash account, never a credit card.
   const transferAccountsList = useMemo(
     () => (availableAccounts?.accounts ?? [])
       .filter((account) => account.id && (account as { type?: string }).type !== 'CREDIT')
-      .map((account) => ({ id: account.id as string, name: account.name })),
-    [availableAccounts],
+      .map((account) => ({ id: account.id as string, name: account.name, label: labels.get(account.id as string) })),
+    [availableAccounts, labels],
   );
 
   const accountName = useCallback(
-    (id: string) => availableAccounts?.accounts.find((account) => account.id === id)?.name ?? null,
-    [availableAccounts],
+    (id: string) => labels.get(id) ?? availableAccounts?.accounts.find((account) => account.id === id)?.name ?? null,
+    [availableAccounts, labels],
   );
 
   const categoryLabel = useCallback(

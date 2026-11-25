@@ -1,11 +1,12 @@
 /**
  * Pure logic of the captures inbox (web app): what a draft needs before it becomes a transaction, the body of
- * POST /captures/:id/confirm, the labels of the apps and kinds, and the local day of a capture. No React and no imports,
- * so tools/fe-tests/t27_captures_inbox.mts runs it under tsx (CAPTURE_INBOX_MODULE points it at a mutated copy).
+ * POST /captures/:id/confirm, the labels of the apps and kinds, and the local day of a capture. No React; the only import is
+ * accountLabels.ts (a mutated copy of this file must sit beside a copy of it), so tools/fe-tests/t27_captures_inbox.mts runs it under tsx (CAPTURE_INBOX_MODULE points it at a mutated copy).
  *
  * The backend (captures.schema.ts, confirmCaptureSchema) takes a strict body: only type, accountId, categoryName, amount,
  * description, date, notes, paid and competenceMonth. Anything else is a 400, so the body is built here from scratch.
  */
+import { accountLabels } from './accountLabels';
 
 /** The apps the phone reads. The package names are the ones confirmed on the device (android/ capture plugin). */
 export const CAPTURE_APPS = [
@@ -158,13 +159,17 @@ export function isSuggestionComplete(suggestion: CaptureSuggestion): boolean {
   return buildConfirmBody(draftFromSuggestion(suggestion, '')).ok;
 }
 
-/** The accounts a transaction can take: active, and not an investment (the same rule as the transaction form). */
+/**
+ * The accounts a transaction can take: active, and not an investment (the same rule as the transaction form).
+ * Accounts with the same name carry their type in the label (see accountLabels).
+ */
 export function captureAccountOptions(
-  accounts: ReadonlyArray<{ id: string; name: string; type: string; isActive?: boolean }>,
+  accounts: ReadonlyArray<{ id: string; name: string; type: string; isActive?: boolean; createdAt?: string | Date | null }>,
 ): Array<{ value: string; label: string }> {
+  const labels = accountLabels(accounts);
   return accounts
     .filter((account) => account.isActive !== false && account.type !== 'INVESTMENT')
-    .map((account) => ({ value: account.id, label: account.name }));
+    .map((account) => ({ value: account.id, label: labels.get(account.id) ?? account.name }));
 }
 
 /** Badge text for a count: "99+" above 99, empty for zero (no badge). */
