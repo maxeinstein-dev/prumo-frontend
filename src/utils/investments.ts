@@ -85,6 +85,8 @@ export interface GoalRef {
   targetAmount: number;
   currentAmount: number;
   remaining?: number;
+  /** The value already comes from linked positions (the stored amount is hidden). */
+  fromPositions?: boolean;
 }
 
 const POSITIONS_BASE = '/app/investments';
@@ -489,4 +491,11 @@ export function investmentErrorText(context: ErrorContext, err: { status?: numbe
   }
   if (status >= 500) return 'Erro no servidor. Tente de novo em instantes.';
   return message || 'Não foi possível concluir. Tente de novo em instantes.';
+}
+
+/** The status and message of an error thrown by the API client (utils/api.ts); empty for anything else. */
+export function apiErrorParts(err: unknown): { status?: number; message?: string } {
+  if (!(err instanceof Error)) return {};
+  const status = (err as Error & { status?: unknown }).status;
+  return { status: typeof status === 'number' ? status : undefined, message: err.message };
 }

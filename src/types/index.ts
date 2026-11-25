@@ -156,6 +156,12 @@ export interface SavingsGoal {
   dueMonth?: string | null;
   /** Where this month's contribution stands (read only). */
   thisMonth?: GoalThisMonth;
+  /** P21 L4: the value comes from the open investment positions linked to the goal (read only). */
+  fromPositions?: boolean;
+  positionsCount?: number;
+  valueDate?: string | null;
+  estimated?: boolean;
+  noQuote?: boolean;
 }
 
 import { User } from 'firebase/auth';

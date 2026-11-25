@@ -19,6 +19,13 @@ export interface SavingsGoal {
   /** 'YYYY-MM', provisions only. */
   dueMonth?: string | null;
   thisMonth?: GoalThisMonth;
+  /** P21 L4: the value comes from the open investment positions linked to the goal. */
+  fromPositions?: boolean;
+  positionsCount?: number;
+  valueDate?: string | null;
+  estimated?: boolean;
+  noQuote?: boolean;
+  remaining?: number;
   createdAt: string;
   updatedAt: string;
 }
