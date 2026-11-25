@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import CaptureConfirmModal from '../captures/CaptureConfirmModal';
 import CaptureTransferBlock from '../captures/CaptureTransferBlock';
 import { hiddenPairSides, transferPairOf, type TransferBody } from '../../utils/captureTransfer';
@@ -36,6 +36,18 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
   const confirmTransfer = useConfirmTransferPair();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CaptureItem | null>(null);
+  // Captures with a request running. A second tap before the re-render (isPending arrives after it) is ignored, so a
+  // double tap never confirms or dismisses the same capture twice; other captures stay free.
+  const inFlight = useRef(new Set<string>());
+  const guarded = async (ids: string[], run: () => Promise<void>) => {
+    if (ids.some((id) => inFlight.current.has(id))) return;
+    ids.forEach((id) => inFlight.current.add(id));
+    try {
+      await run();
+    } finally {
+      ids.forEach((id) => inFlight.current.delete(id));
+    }
+  };
 
   const total = count.data ?? 0;
   if (!householdId || total <= 0) {
@@ -97,44 +109,53 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
       setEditing(item);
       return;
     }
-    try {
-      await confirm.mutateAsync({ id: item.id, householdId, body: result.body });
-      success(tx('captureConfirmedToast'));
-    } catch (error) {
-      reportFailure(error);
-    }
+    await guarded([item.id], async () => {
+      try {
+        await confirm.mutateAsync({ id: item.id, householdId, body: result.body });
+        success(tx('captureConfirmedToast'));
+      } catch (error) {
+        reportFailure(error);
+      }
+    });
   };
 
   const handleDismiss = async (item: CaptureItem) => {
     if (!householdId) return;
-    try {
-      await dismiss.mutateAsync({ id: item.id, householdId });
-      success(tx('captureDismissedToast'));
-    } catch (error) {
-      reportFailure(error);
-    }
+    await guarded([item.id], async () => {
+      try {
+        await dismiss.mutateAsync({ id: item.id, householdId });
+        success(tx('captureDismissedToast'));
+      } catch (error) {
+        reportFailure(error);
+      }
+    });
   };
 
-  const handleConfirmTransfer = async (body: TransferBody) => {
+  const handleConfirmTransfer = async (item: CaptureItem, body: TransferBody) => {
     if (!householdId) return;
-    try {
-      await confirmTransfer.mutateAsync({ householdId, body });
-      success('Transferência lançada.');
-    } catch (error) {
-      reportFailure(error);
-    }
+    const pair = transferPairOf(item);
+    await guarded(pair ? [item.id, pair.captureId] : [item.id], async () => {
+      try {
+        await confirmTransfer.mutateAsync({ householdId, body });
+        success('Transferência lançada.');
+      } catch (error) {
+        reportFailure(error);
+      }
+    });
   };
 
   const handleDismissBoth = async (item: CaptureItem) => {
     if (!householdId) return;
     const pair = transferPairOf(item);
-    try {
-      await dismiss.mutateAsync({ id: item.id, householdId });
-      if (pair) await dismiss.mutateAsync({ id: pair.captureId, householdId });
-      success(tx('captureDismissedToast'));
-    } catch (error) {
-      reportFailure(error);
-    }
+    await guarded(pair ? [item.id, pair.captureId] : [item.id], async () => {
+      try {
+        await dismiss.mutateAsync({ id: item.id, householdId });
+        if (pair) await dismiss.mutateAsync({ id: pair.captureId, householdId });
+        success(tx('captureDismissedToast'));
+      } catch (error) {
+        reportFailure(error);
+      }
+    });
   };
 
   return (
@@ -186,7 +207,7 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
                     accounts={transferAccountsList}
                     canEdit={canEdit}
                     busy={busy || confirmTransfer.isPending}
-                    onConfirm={(body) => void handleConfirmTransfer(body)}
+                    onConfirm={(body) => void handleConfirmTransfer(item, body)}
                     onDismissBoth={() => void handleDismissBoth(item)}
                     onDismissOne={() => void handleDismiss(item)}
                   />
