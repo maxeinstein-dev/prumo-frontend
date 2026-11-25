@@ -11,6 +11,7 @@ import { captureText } from '../../utils/captureTexts';
 import { captureAmountSign, captureLineMeta, captureVisibleCount } from '../../utils/extratoMobile';
 import { formatCurrency } from '../../utils/format';
 import { accountLabels, type LabelAccount } from '../../utils/accountLabels';
+import { installmentsAllowed } from '../../utils/captureInstallments';
 
 const TOUCH = 'min-h-[44px]';
 
@@ -191,6 +192,8 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
           const suggested = item.suggestion.accountId;
           const accountBase = (suggested ? labels.get(suggested) : null) ?? accounts.find((a) => a.id === suggested)?.name ?? null;
           const accountName = reading.cardLast4 ? `${accountBase ?? 'sem conta'} · final ${reading.cardLast4}` : accountBase;
+          // P22: the one tap posts the purchase as paid in full; a card purchase can open the form to split it instead.
+          const canSplit = oneTap && installmentsAllowed(item.suggestion.type, accounts.find((a) => a.id === suggested)?.type);
           const busy = (confirm.isPending && confirm.variables?.id === item.id) || (dismiss.isPending && dismiss.variables?.id === item.id);
           return (
             <li key={item.id} className="border-t border-rc-line py-2.5 first:border-t-0 last:pb-0">
@@ -227,6 +230,17 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
                 >
                   Descartar
                 </button>
+                {canSplit && (
+                  <button
+                    type="button"
+                    disabled={!canEdit || busy}
+                    onClick={() => setEditing(item)}
+                    aria-label={`Parcelar captura: ${desc}`}
+                    className={`${TOUCH} flex-1 rounded-xl border border-rc-line px-3 text-sm font-medium text-rc-ink disabled:opacity-50`}
+                  >
+                    Parcelar
+                  </button>
+                )}
                 <button
                   type="button"
                   disabled={!canEdit || busy}
