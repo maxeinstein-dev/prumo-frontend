@@ -64,6 +64,7 @@ import {
 } from "../hooks/api/useTransactions";
 import { useDefaultHousehold } from "../hooks/useDefaultHousehold";
 import { useIsMobileShell } from "../hooks/useIsMobileShell";
+import { useToday } from "../hooks/useToday";
 import { useSelectedMonth } from "../context/SelectedMonthContext";
 import MobileCreditCards from "../components/credit-cards/MobileCreditCards";
 import { addMonthKey, invoiceMemo, monthStartOf, openInvoiceMonthKey, openingInvoiceMonth } from "../utils/cardsMobile";
@@ -95,8 +96,9 @@ const CreditCards = () => {
   // Mobile shell (below 768 px): the month of the header chooses the invoice; the desktop keeps its own navigator.
   const isMobileShell = useIsMobileShell();
   const { monthKey: headerMonthKey, setMonthKey: setHeaderMonthKey } = useSelectedMonth();
-  // The day of the visit (fixed while the screen is open), used to tell the open invoice from the closed ones.
-  const [todayIso] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  // The current day, used to tell the open invoice from the closed ones
+  // (refreshed when the app comes back to the front; the card's opening month, already decided, is not re-decided).
+  const todayIso = useToday();
   // The user chose a month by hand in this visit: from then on the rule does not pick the month of this visit.
   const manualMonthRef = useRef(false);
   // The header month this screen last wrote. Starts as the header at entry, so that is not read as a choice.
