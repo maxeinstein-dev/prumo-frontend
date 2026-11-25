@@ -25,6 +25,7 @@ import {
   Briefcase,
   ClipboardCheck,
   Landmark,
+  Coins,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import MobileBanner from "./MobileBanner";
@@ -43,6 +44,7 @@ import { captureText } from "../utils/captureTexts";
 import { cashFlowText } from "../utils/cashFlowTexts";
 import { monthCloseText } from "../utils/monthCloseTexts";
 import { netWorthText } from "../utils/netWorthTexts";
+import { invText } from "../utils/investmentsTexts";
 import { incomeText } from "../utils/incomeTexts";
 import { isNativeApp } from "../native/captureReader";
 import { useNativeOpenRequests } from "../native/nativeOpen";
@@ -179,6 +181,7 @@ const Layout = () => {
     { path: "/app/cash-flow", label: cashFlowText(t, "cashFlowNavLabel"), icon: TrendingUp },
     { path: "/app/month-close", label: monthCloseText(t, "monthCloseNavLabel"), icon: ClipboardCheck },
     { path: "/app/net-worth", label: netWorthText(t, "netWorthNavLabel"), icon: Landmark },
+    { path: "/app/investments", label: invText(t, "invNavLabel"), icon: Coins },
     { path: "/app/income", label: incomeText(t, "incomeNavLabel"), icon: Briefcase },
     { path: "/app/credit-cards", label: `${t.creditCards}`, icon: CreditCard },
     { path: "/app/people", label: t.peoplePage || "Pessoas", icon: Users },
