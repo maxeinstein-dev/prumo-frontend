@@ -4,6 +4,7 @@ import CaptureTransferBlock from '../captures/CaptureTransferBlock';
 import { hiddenPairSides, transferPairOf, type TransferBody } from '../../utils/captureTransfer';
 import { useI18n } from '../../context/I18nContext';
 import { useToastContext } from '../../context/ToastContext';
+import { useAvailableAccounts } from '../../hooks/api/useAccounts';
 import { useCaptures, useCapturesCount, useConfirmCapture, useConfirmTransferPair, useDismissCapture } from '../../hooks/api/useCaptures';
 import { appLabel, formatCaptureDateTime, localDayKey, type CaptureItem } from '../../utils/captureInbox';
 import { oneTapConfirmBody, readingOf, warningText } from '../../utils/captureReading';
@@ -33,6 +34,9 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
   const { success, error: showError } = useToastContext();
   const list = useCaptures({ householdId, status: 'PENDING' });
   const count = useCapturesCount(householdId, 'PENDING');
+  // The labels need the creation date and the active flag, which the accounts of the Extrato do not carry: the same
+  // list as the confirm form and the captures page, so "Banco X (cartão 2)" is the same account everywhere.
+  const { data: available } = useAvailableAccounts(householdId ?? '', false);
   const confirm = useConfirmCapture();
   const dismiss = useDismissCapture();
   const confirmTransfer = useConfirmTransferPair();
@@ -71,10 +75,14 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
   // A Pix between own accounts shows once, on its outflow (P16); a Pix never leaves a credit card.
   const hidden = hiddenPairSides(items);
   // Accounts of the same name carry their type ("Banco X (cartão)"): P22.
-  const labels = accountLabels(accounts as LabelAccount[]);
-  const transferAccountsList = accounts
-    .filter((a): a is { id: string; name: string; type?: string } => !!a.id && a.type !== 'CREDIT')
-    .map((a) => ({ id: a.id, name: a.name, label: labels.get(a.id) }));
+  const labels = accountLabels(((available?.accounts ?? accounts) as LabelAccount[]).filter((a) => a.type !== 'INVESTMENT'));
+  const cashAccounts = accounts
+    .filter((a): a is { id: string; name: string; type?: string } => !!a.id && a.type !== 'CREDIT');
+  const cashLabels = accountLabels(
+    ((available?.accounts as LabelAccount[] | undefined) ?? (cashAccounts as LabelAccount[]))
+      .filter((a) => a.type !== 'CREDIT'),
+  );
+  const transferAccountsList = cashAccounts.map((a) => ({ id: a.id, name: a.name, label: cashLabels.get(a.id) }));
   const { visible, rest } = captureVisibleCount(total, open);
   const shown = items.filter((item) => !hidden.has(item.id)).slice(0, visible);
   const hiddenCount = Math.max(0, total - shown.length);

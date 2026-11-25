@@ -82,15 +82,18 @@ const Captures = () => {
   }, [list.data]);
 
   // Accounts of the same name carry their type ("Banco X (cartão)"): P22.
-  const labels = useMemo(() => accountLabels((availableAccounts?.accounts ?? []) as LabelAccount[]), [availableAccounts]);
-
-  // A Pix leaves from or arrives at a cash account, never a credit card.
-  const transferAccountsList = useMemo(
-    () => (availableAccounts?.accounts ?? [])
-      .filter((account) => account.id && (account as { type?: string }).type !== 'CREDIT')
-      .map((account) => ({ id: account.id as string, name: account.name, label: labels.get(account.id as string) })),
-    [availableAccounts, labels],
+  const labels = useMemo(
+    () => accountLabels(((availableAccounts?.accounts ?? []) as LabelAccount[]).filter((account) => account.type !== 'INVESTMENT')),
+    [availableAccounts],
   );
+
+  // A Pix leaves from or arrives at a cash account, never a credit card (the suffix is decided among those).
+  const transferAccountsList = useMemo(() => {
+    const cash = (availableAccounts?.accounts ?? [])
+      .filter((account) => account.id && (account as { type?: string }).type !== 'CREDIT') as LabelAccount[];
+    const cashLabels = accountLabels(cash);
+    return cash.map((account) => ({ id: account.id as string, name: account.name, label: cashLabels.get(account.id as string) }));
+  }, [availableAccounts]);
 
   const accountName = useCallback(
     (id: string) => labels.get(id) ?? availableAccounts?.accounts.find((account) => account.id === id)?.name ?? null,

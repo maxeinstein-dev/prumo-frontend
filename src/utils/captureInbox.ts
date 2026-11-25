@@ -170,10 +170,10 @@ export function isSuggestionComplete(suggestion: CaptureSuggestion): boolean {
 export function captureAccountOptions(
   accounts: ReadonlyArray<{ id: string; name: string; type: string; isActive?: boolean; createdAt?: string | Date | null }>,
 ): Array<{ value: string; label: string }> {
-  const labels = accountLabels(accounts);
-  return accounts
-    .filter((account) => account.isActive !== false && account.type !== 'INVESTMENT')
-    .map((account) => ({ value: account.id, label: labels.get(account.id) ?? account.name }));
+  // The suffix is decided among the accounts the picker shows: a hidden investment does not add one.
+  const shown = accounts.filter((account) => account.isActive !== false && account.type !== 'INVESTMENT');
+  const labels = accountLabels(shown);
+  return shown.map((account) => ({ value: account.id, label: labels.get(account.id) ?? account.name }));
 }
 
 /** Badge text for a count: "99+" above 99, empty for zero (no badge). */
