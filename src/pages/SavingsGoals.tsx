@@ -42,6 +42,7 @@ import {
   type PlanError,
 } from '../utils/savingsGoalsPlan';
 import { goalsText, type GoalsTextKey } from '../utils/savingsGoalsTexts';
+import { LoadFailureNotice } from '../components/LoadFailureNotice';
 
 const PLAN_ERROR_KEY: Record<PlanError, GoalsTextKey> = {
   account: 'goalsErrAccountRequired',
@@ -85,7 +86,7 @@ function isGoalSyncedWithInvestment(goal: SavingsGoal, accounts: Account[]): boo
 }
 
 const SavingsGoals = () => {
-  const { savingsGoals, accounts, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal, loading } = useTransactions();
+  const { savingsGoals, accounts, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal, loading, loadFailed, retryLoad } = useTransactions();
   const { baseCurrency } = useCurrency();
   const { t } = useI18n();
   const { success, error: showError } = useToastContext();
@@ -415,7 +416,10 @@ const SavingsGoals = () => {
 
       {/* Lista de metas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {savingsGoals.length === 0 ? (
+        {savingsGoals.length === 0 && loadFailed.savingsGoals ? (
+          // The request failed and there is nothing to show: not "no goals registered"
+          <LoadFailureNotice className="col-span-full" onRetry={retryLoad} />
+        ) : savingsGoals.length === 0 ? (
           <div className="col-span-full px-6 py-8 text-center font-light text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-lg">
             {t.noGoalsRegistered}
           </div>

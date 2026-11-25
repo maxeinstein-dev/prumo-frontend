@@ -20,9 +20,11 @@ import { budgetRealized, summaryMonthOf, summaryRowsByBudget } from '../utils/bu
 import { budgetsInForce, editTarget, isInherited, monthKeyOfDate, monthLabel, removalFor } from '../utils/budgetPeriod';
 import { useUpdateBudget } from '../hooks/api/useBudgets';
 import { useToastContext } from '../context/ToastContext';
+import { LoadFailureNotice } from '../components/LoadFailureNotice';
+import { isLoadFailure } from '../utils/loadFailure';
 
 const Budgets = () => {
-  const { budgets, deleteBudget, loading } = useTransactions();
+  const { budgets, deleteBudget, loading, loadFailed, retryLoad } = useTransactions();
   const { baseCurrency } = useCurrency();
   const { t } = useI18n();
   const { registerHandler, unregisterHandler } = useCommandMenu();
@@ -62,6 +64,9 @@ const Budgets = () => {
   const { householdId } = useDefaultHousehold();
   const summary = useBudgetSummary({ householdId: householdId ?? '', month: summaryMonthOf(selectedMonth) });
   const summaryRows = useMemo(() => summaryRowsByBudget(summary.data?.budgets), [summary.data]);
+  // Which budgets are in force comes from the summary and the budgets themselves from the list: if either failed with
+  // nothing to show, the month is not "empty", it is unknown.
+  const listFailed = (loadFailed.budgets && budgets.length === 0) || isLoadFailure({ isError: summary.isError, data: summary.data });
 
   // A budget repeats from its month on: the server says which ones are in force in the month shown.
   const selectedKey = monthKeyOfDate(selectedMonth);
@@ -152,6 +157,14 @@ const Budgets = () => {
         </PageButton>
       </PageHeader>
 
+      {listFailed ? (
+        <LoadFailureNotice
+          onRetry={() => {
+            retryLoad();
+            if (summary.isError) void summary.refetch();
+          }}
+        />
+      ) : (
       <BudgetList
         budgets={budgetStatus}
         realizedFailed={summary.isError}
@@ -165,6 +178,7 @@ const Budgets = () => {
         onDelete={handleDelete}
         t={t}
       />
+      )}
 
       <BudgetModal
         isOpen={isModalOpen}

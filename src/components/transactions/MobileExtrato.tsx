@@ -4,6 +4,7 @@ import type { Transaction } from '../../types';
 import { SHORT_FILTERS, type ShortFilter } from '../../utils/extratoMobile';
 import { TransactionFilters, type TransactionFiltersProps } from './TransactionFilters';
 import { useBackLayer } from '../../hooks/useBackLayer';
+import { LoadFailureNotice } from '../LoadFailureNotice';
 
 const TOUCH = 'min-h-[44px]';
 
@@ -38,6 +39,9 @@ export interface MobileExtratoProps {
   onShortFilterChange: (filter: ShortFilter) => void;
   days: ExtratoDayView[];
   loading: boolean;
+  /** The list failed to load and there is nothing to show: a failure notice with a retry, never "Nenhum lançamento". */
+  failed?: boolean;
+  onRetry?: () => void;
   hasMore: boolean;
   isLoadingMore: boolean;
   onLoadMore: () => void;
@@ -60,6 +64,8 @@ const MobileExtrato = ({
   onShortFilterChange,
   days,
   loading,
+  failed = false,
+  onRetry,
   hasMore,
   isLoadingMore,
   onLoadMore,
@@ -70,7 +76,7 @@ const MobileExtrato = ({
 }: MobileExtratoProps) => {
   const [moreOpen, setMoreOpen] = useState(false);
   useBackLayer(moreOpen, () => setMoreOpen(false));
-  const empty = !loading && days.length === 0;
+  const empty = !loading && !failed && days.length === 0;
 
   return (
     <div>
@@ -143,6 +149,7 @@ const MobileExtrato = ({
 
       <div className="mt-2" aria-live="polite">
         {loading && <p role="status" className="py-6 text-center text-sm text-rc-ink3">Carregando lançamentos…</p>}
+        {!loading && failed && onRetry && <LoadFailureNotice onRetry={onRetry} />}
         {empty && <p className="py-8 text-center text-sm text-rc-ink2">Nenhum lançamento com esse filtro neste mês.</p>}
       </div>
 

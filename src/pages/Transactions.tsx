@@ -23,6 +23,8 @@ import TransactionModal from '../components/TransactionModal';
 import ImportHubDialog from '../components/ImportHubDialog';
 import DivideTransactionDialog from '../components/people/DivideTransactionDialog';
 import { canWritePeople } from '../utils/people';
+import { isLoadFailure } from '../utils/loadFailure';
+import { LoadFailureNotice } from '../components/LoadFailureNotice';
 import ConfirmModal from '../components/ConfirmModal';
 import { Transaction } from '../types';
 import { PageButton } from '../components/PageButton';
@@ -147,7 +149,9 @@ const Transactions = () => {
   }, [householdId, dateRange, searchTerm, typeFilter, categoryFilter, activeTab, isMobileShell, monthKey]);
   
   // Fetch transactions with pagination
-  const { data: transactionsData, isLoading: transactionsLoading } = useTransactions(transactionsQuery);
+  const { data: transactionsData, isLoading: transactionsLoading, isError: transactionsError, refetch: refetchTransactions } = useTransactions(transactionsQuery);
+  // A failed request with nothing to show is a failure, not "no transactions".
+  const transactionsFailed = isLoadFailure({ isError: transactionsError, data: transactionsData });
   const loadMoreMutation = useLoadMoreTransactions();
   
   // Memoizar função de carregar mais para evitar re-renders desnecessários
@@ -892,6 +896,8 @@ const Transactions = () => {
           onShortFilterChange={changeShortFilter}
           days={days}
           loading={loading}
+          failed={transactionsFailed}
+          onRetry={() => void refetchTransactions()}
           hasMore={transactionsData?.pagination?.hasMore || false}
           isLoadingMore={loadMoreMutation.isPending}
           onLoadMore={handleLoadMore}
@@ -1038,6 +1044,8 @@ const Transactions = () => {
             </div>
           ))}
         </div>
+      ) : transactionsFailed ? (
+        <LoadFailureNotice onRetry={() => void refetchTransactions()} />
       ) : (
         <TransactionList
           groupedTransactions={groupedTransactions}
