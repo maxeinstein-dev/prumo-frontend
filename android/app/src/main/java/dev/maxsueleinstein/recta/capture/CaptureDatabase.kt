@@ -61,9 +61,31 @@ interface CaptureDao {
     @Query("SELECT COUNT(*) FROM captured_notifications WHERE status = :status")
     suspend fun count(status: String): Int
 
-    /** Sent rows are kept for a while for the diagnostics counters, then dropped so the raw text does not pile up. */
-    @Query("DELETE FROM captured_notifications WHERE status = 'SENT' AND sentAtMillis < :before")
+    /**
+     * Sent and rejected rows are kept for a while for the diagnostics counters, then dropped so the raw text does not pile
+     * up. The rule is mirrored in [CaptureRetention.isPurgeable]; change both together.
+     */
+    @Query(
+        "DELETE FROM captured_notifications WHERE " +
+            "(status = 'SENT' AND sentAtMillis < :before) OR (status = 'REJECTED' AND createdAtMillis < :before)",
+    )
     suspend fun purgeSent(before: Long): Int
+}
+
+/**
+ * How long finished rows stay in the queue. SENT rows age from the moment they were sent (sentAtMillis). REJECTED rows
+ * have no rejection time in the schema, so they age from the moment they were captured (createdAtMillis).
+ */
+object CaptureRetention {
+    const val RETENTION_MS = 14L * 24 * 60 * 60 * 1000
+
+    fun cutoff(nowMillis: Long): Long = nowMillis - RETENTION_MS
+
+    fun isPurgeable(status: String, sentAtMillis: Long?, createdAtMillis: Long, cutoffMillis: Long): Boolean = when (status) {
+        QueueStatus.SENT -> sentAtMillis != null && sentAtMillis < cutoffMillis
+        QueueStatus.REJECTED -> createdAtMillis < cutoffMillis
+        else -> false
+    }
 }
 
 // exportSchema is off: there is a single version. Turn it on (and set room.schemaLocation) with the first migration.

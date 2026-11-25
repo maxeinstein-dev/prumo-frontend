@@ -79,7 +79,6 @@ object CaptureUploader {
 
     /** Batches per run: 200 x 50 = 10,000 notifications, far above any real queue. */
     private const val MAX_BATCHES_PER_RUN = 200
-    private const val SENT_RETENTION_MS = 14L * 24 * 60 * 60 * 1000
 
     suspend fun run(
         context: Context,
@@ -117,7 +116,7 @@ object CaptureUploader {
         }
         if (result == UploadResult.DONE && batches >= MAX_BATCHES_PER_RUN) result = UploadResult.RETRY
 
-        dao.purgeSent(System.currentTimeMillis() - SENT_RETENTION_MS)
+        dao.purgeSent(CaptureRetention.cutoff(System.currentTimeMillis()))
         result
     }
 
