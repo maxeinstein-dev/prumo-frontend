@@ -339,6 +339,11 @@ const convertSavingsGoalFromBackend = (g: BackendSavingsGoal): SavingsGoal => {
     contributionDay: g.contributionDay ?? null,
     dueMonth: g.dueMonth ?? null,
     thisMonth: g.thisMonth,
+    fromPositions: g.fromPositions === true,
+    positionsCount: g.positionsCount ?? 0,
+    valueDate: g.valueDate ?? null,
+    estimated: g.estimated === true,
+    noQuote: g.noQuote === true,
   };
 };
 
