@@ -27,6 +27,7 @@ import { DialogShell, INPUT_CLS, LABEL_CLS, BTN_PRIMARY, BTN_SECONDARY, ERROR_CL
 import { QuickSplitPills } from '../people/QuickSplitPills';
 import { usePeople, type Person } from '../../hooks/api/usePeople';
 import { quickSplitBody, quickSplitPerson, readLastSplitPerson, writeLastSplitPerson, type QuickSplit } from '../../utils/defaultSplit';
+import { installmentHint, installmentOptions, installmentsAllowed, withInstallments } from '../../utils/captureInstallments';
 
 /** The touch target the phone needs (WCAG 2.5.5 and the Android guideline). */
 const TOUCH = 'min-h-[44px]';
@@ -70,6 +71,9 @@ const CaptureConfirmModal = ({ item, householdId, onDone, onClose }: CaptureConf
   const [split, setSplit] = useState<QuickSplit>('mine');
   const [chosen, setChosen] = useState<Person | null>(null);
   const splitPerson = chosen ?? quickSplitPerson(people, readLastSplitPerson());
+  // P22: "Parcelada em" (a card notification never says it). The amount stays the total of the purchase.
+  const [installments, setInstallments] = useState('1');
+  const partCurrency = useCurrencyMask('');
 
   const set = <K extends keyof CaptureDraft>(field: K, value: CaptureDraft[K]) =>
     setDraft((current) => ({ ...current, [field]: value }));
@@ -88,6 +92,11 @@ const CaptureConfirmModal = ({ item, householdId, onDone, onClose }: CaptureConf
   const typeEnum = draft.type === 'INCOME' ? TransactionType.INCOME : draft.type === 'EXPENSE' ? TransactionType.EXPENSE : undefined;
   const dayDate = dateFromDayKey(draft.date);
   const amountValue = currency.numericValue > 0 ? currency.numericValue : null;
+  const accountType = (availableAccounts?.accounts ?? []).find((account) => account.id === draft.accountId)?.type ?? null;
+  const canSplit = installmentsAllowed(draft.type, accountType);
+  const installmentCount = canSplit ? Number(installments) : 1;
+  const partValue = partCurrency.numericValue > 0 ? partCurrency.numericValue : null;
+  const hint = installmentHint(amountValue, installmentCount, partValue);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -99,10 +108,15 @@ const CaptureConfirmModal = ({ item, householdId, onDone, onClose }: CaptureConf
       else setProblem(`${tx('captureFormMissing')}: ${labels.join(', ')}.`);
       return;
     }
+    const parts = withInstallments(result.body, { count: installmentCount, accountType, installmentAmount: partValue });
+    if (!parts.ok) {
+      setProblem(parts.reason === 'tooSmall' ? 'O valor é pequeno demais para dividir nessas parcelas.' : 'Informe um valor de parcela maior que zero.');
+      return;
+    }
     setProblem(null);
     const shares = quickSplitBody(split, splitPerson, result.body.type);
     try {
-      await confirm.mutateAsync({ id: item.id, householdId, body: shares ? { ...result.body, shares } : result.body });
+      await confirm.mutateAsync({ id: item.id, householdId, body: shares ? { ...parts.body, shares } : parts.body });
       if (shares && splitPerson) writeLastSplitPerson(splitPerson.id);
       success(tx('captureConfirmedToast'));
       onDone();
@@ -209,6 +223,43 @@ const CaptureConfirmModal = ({ item, householdId, onDone, onClose }: CaptureConf
           />
           {noAccounts && <p className={`mt-1 ${ERROR_CLS}`}>{tx('captureFormNoAccounts')}</p>}
         </div>
+
+        {canSplit && (
+          <div className="space-y-2">
+            <div>
+              <label htmlFor="capture-installments" className={LABEL_CLS}>Parcelada em</label>
+              <select
+                id="capture-installments"
+                value={installments}
+                disabled={saving}
+                onChange={(e) => setInstallments(e.target.value)}
+                aria-describedby={hint ? 'capture-installments-hint' : undefined}
+                className={`${INPUT_CLS} ${TOUCH}`}
+              >
+                {installmentOptions().map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            {installmentCount > 1 && (
+              <div>
+                <label htmlFor="capture-installment-amount" className={LABEL_CLS}>Valor da parcela (se for diferente)</label>
+                <input
+                  id="capture-installment-amount"
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  placeholder="Divisão automática"
+                  disabled={saving}
+                  value={partCurrency.value}
+                  onChange={partCurrency.onChange}
+                  className={`${INPUT_CLS} ${TOUCH} text-right`}
+                />
+              </div>
+            )}
+            {hint && <p id="capture-installments-hint" className={`text-xs font-light ${MUTED_CLS}`}>{hint}. O valor acima é o total da compra.</p>}
+          </div>
+        )}
 
         <div>
           <span className={LABEL_CLS}>{tx('captureFormCategory')}</span>

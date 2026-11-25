@@ -4,12 +4,15 @@ import CaptureTransferBlock from '../captures/CaptureTransferBlock';
 import { hiddenPairSides, transferPairOf, type TransferBody } from '../../utils/captureTransfer';
 import { useI18n } from '../../context/I18nContext';
 import { useToastContext } from '../../context/ToastContext';
+import { useAvailableAccounts } from '../../hooks/api/useAccounts';
 import { useCaptures, useCapturesCount, useConfirmCapture, useConfirmTransferPair, useDismissCapture } from '../../hooks/api/useCaptures';
 import { appLabel, formatCaptureDateTime, localDayKey, type CaptureItem } from '../../utils/captureInbox';
 import { oneTapConfirmBody, readingOf, warningText } from '../../utils/captureReading';
 import { captureText } from '../../utils/captureTexts';
 import { captureAmountSign, captureLineMeta, captureVisibleCount } from '../../utils/extratoMobile';
 import { formatCurrency } from '../../utils/format';
+import { accountLabels, type LabelAccount } from '../../utils/accountLabels';
+import { installmentsAllowed } from '../../utils/captureInstallments';
 
 const TOUCH = 'min-h-[44px]';
 
@@ -31,6 +34,9 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
   const { success, error: showError } = useToastContext();
   const list = useCaptures({ householdId, status: 'PENDING' });
   const count = useCapturesCount(householdId, 'PENDING');
+  // The labels need the creation date and the active flag, which the accounts of the Extrato do not carry: the same
+  // list as the confirm form and the captures page, so "Banco X (cartão 2)" is the same account everywhere.
+  const { data: available } = useAvailableAccounts(householdId ?? '', false);
   const confirm = useConfirmCapture();
   const dismiss = useDismissCapture();
   const confirmTransfer = useConfirmTransferPair();
@@ -68,9 +74,15 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
   }
   // A Pix between own accounts shows once, on its outflow (P16); a Pix never leaves a credit card.
   const hidden = hiddenPairSides(items);
-  const transferAccountsList = accounts
-    .filter((a): a is { id: string; name: string; type?: string } => !!a.id && a.type !== 'CREDIT')
-    .map((a) => ({ id: a.id, name: a.name }));
+  // Accounts of the same name carry their type ("Banco X (cartão)"): P22.
+  const labels = accountLabels(((available?.accounts ?? accounts) as LabelAccount[]).filter((a) => a.type !== 'INVESTMENT'));
+  const cashAccounts = accounts
+    .filter((a): a is { id: string; name: string; type?: string } => !!a.id && a.type !== 'CREDIT');
+  const cashLabels = accountLabels(
+    ((available?.accounts as LabelAccount[] | undefined) ?? (cashAccounts as LabelAccount[]))
+      .filter((a) => a.type !== 'CREDIT'),
+  );
+  const transferAccountsList = cashAccounts.map((a) => ({ id: a.id, name: a.name, label: cashLabels.get(a.id) }));
   const { visible, rest } = captureVisibleCount(total, open);
   const shown = items.filter((item) => !hidden.has(item.id)).slice(0, visible);
   const hiddenCount = Math.max(0, total - shown.length);
@@ -185,8 +197,11 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
             : item.suggestion.type === 'EXPENSE'
               ? tx('captureFormExpense')
               : '';
-          const accountBase = accounts.find((a) => a.id === item.suggestion.accountId)?.name ?? null;
+          const suggested = item.suggestion.accountId;
+          const accountBase = (suggested ? labels.get(suggested) : null) ?? accounts.find((a) => a.id === suggested)?.name ?? null;
           const accountName = reading.cardLast4 ? `${accountBase ?? 'sem conta'} · final ${reading.cardLast4}` : accountBase;
+          // P22: the one tap posts the purchase as paid in full; a card purchase can open the form to split it instead.
+          const canSplit = oneTap && installmentsAllowed(item.suggestion.type, accounts.find((a) => a.id === suggested)?.type);
           const busy = (confirm.isPending && confirm.variables?.id === item.id) || (dismiss.isPending && dismiss.variables?.id === item.id);
           return (
             <li key={item.id} className="border-t border-rc-line py-2.5 first:border-t-0 last:pb-0">
@@ -223,6 +238,17 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
                 >
                   Descartar
                 </button>
+                {canSplit && (
+                  <button
+                    type="button"
+                    disabled={!canEdit || busy}
+                    onClick={() => setEditing(item)}
+                    aria-label={`Parcelar captura: ${desc}`}
+                    className={`${TOUCH} flex-1 rounded-xl border border-rc-line px-3 text-sm font-medium text-rc-ink disabled:opacity-50`}
+                  >
+                    Parcelar
+                  </button>
+                )}
                 <button
                   type="button"
                   disabled={!canEdit || busy}
