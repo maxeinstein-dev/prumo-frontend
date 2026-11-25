@@ -69,6 +69,10 @@ export interface ConfirmBody {
   description?: string;
   date: string;
   paid: true;
+  /** P22: a card purchase in installments (2 to 24); `amount` stays the total (captureInstallments.ts). */
+  installments?: number;
+  /** P22: the part value the user corrected; absent means the server's equal split. */
+  installmentAmount?: number;
   /** P19: "Metade com" / "É de", written by the server with the transaction (only for an expense). */
   shares?: import('./defaultSplit').QuickSplitBody;
 }
