@@ -61,9 +61,14 @@ export default function PositionCard({ position }: { position: Position }) {
           <PositionMarks position={position} />
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-sm font-semibold tabular-nums text-rc-ink">{money(position.currentValue)}</p>
+          {/* The caption sits above the amount it names, and the result carries its own word, so the result is never
+              read as the value. */}
           <p className="text-[11px] text-rc-ink3">{stock ? invText(t, 'invValue') : invText(t, 'invEstimatedValue')}</p>
-          <p className={`text-xs tabular-nums ${TONE_CLS[tone]}`}>{signedMoney(position.result, baseCurrency)}</p>
+          <p className="text-sm font-semibold tabular-nums text-rc-ink">{money(position.currentValue)}</p>
+          <p className="text-xs tabular-nums">
+            <span className="text-rc-ink3">{invText(t, 'invResult')} </span>
+            <span className={TONE_CLS[tone]}>{signedMoney(position.result, baseCurrency)}</span>
+          </p>
         </div>
         <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-rc-ink3" aria-hidden="true" />
       </Link>
