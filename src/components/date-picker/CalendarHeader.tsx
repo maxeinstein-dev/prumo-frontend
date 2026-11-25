@@ -17,16 +17,17 @@ export const CalendarHeader = ({
   onNextMonth,
   onGoToToday,
 }: CalendarHeaderProps) => {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
 
   return (
     <div className="flex items-center justify-between mb-4">
       <button
         type="button"
         onClick={onPreviousMonth}
+        aria-label={t.previousMonth}
         className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
       >
-        <ChevronLeft className="h-5 w-5" />
+        <ChevronLeft className="h-5 w-5" aria-hidden="true" />
       </button>
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -43,9 +44,10 @@ export const CalendarHeader = ({
       <button
         type="button"
         onClick={onNextMonth}
+        aria-label={t.nextMonth}
         className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
       >
-        <ChevronRight className="h-5 w-5" />
+        <ChevronRight className="h-5 w-5" aria-hidden="true" />
       </button>
     </div>
   );

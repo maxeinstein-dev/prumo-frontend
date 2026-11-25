@@ -15,10 +15,12 @@ export const CreditCardModalHeader = ({ isEditing, onClose }: CreditCardModalHea
         {isEditing ? (t.editCreditCard || 'Editar Cartão de Crédito') : (t.newCreditCard || 'Novo Cartão de Crédito')}
       </h2>
       <button
+        type="button"
         onClick={onClose}
+        aria-label={t.close}
         className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
       >
-        <X className="h-6 w-6" />
+        <X className="h-6 w-6" aria-hidden="true" />
       </button>
     </div>
   );
