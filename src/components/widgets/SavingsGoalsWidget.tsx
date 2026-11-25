@@ -4,6 +4,9 @@ import { useI18n } from '../../context/I18nContext';
 import { formatCurrency } from '../../utils/format';
 import { Target } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
+import { goalProgress, goalValueNotes, isFromPositions } from '../../utils/goalPositions';
+import { shortDate } from '../../utils/investments';
+import { invText } from '../../utils/investmentsTexts';
 
 interface SavingsGoalsWidgetProps {
   blurNumbers?: boolean;
@@ -71,7 +74,10 @@ export const SavingsGoalsWidget = ({ blurNumbers = false }: SavingsGoalsWidgetPr
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 auto-cols-max">
       {savingsGoals.map((goal) => {
-        const progress = (goal.currentAmount / goal.targetAmount) * 100;
+        // The text may pass 100% (a goal fed by positions follows the market); the bar never does
+        const { percent: progress, barPercent } = goalProgress(goal);
+        const fromPositions = isFromPositions(goal);
+        const notes = goalValueNotes(goal);
         const monthlySavings = calculateMonthlySavings(goal);
         
         return (
@@ -87,12 +93,20 @@ export const SavingsGoalsWidget = ({ blurNumbers = false }: SavingsGoalsWidgetPr
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mb-2">
               <div
                 className="bg-primary-600 dark:bg-primary-500 h-1.5 rounded-full transition-all"
-                style={{ width: `${Math.min(progress, 100)}%` }}
+                style={{ width: `${barPercent}%` }}
               />
             </div>
             <div className={`text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 ${blurNumbers ? 'demo-blur' : ''}`}>
               {progress.toFixed(1)}% {t.completed}
             </div>
+            {fromPositions && (
+              <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-light text-gray-600 dark:text-gray-400" data-testid="goal-from-positions">
+                <span>{invText(t, 'invGoalFromPositions')}</span>
+                {notes.estimated && <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">{invText(t, 'invGoalEstimated')}</span>}
+                {notes.noQuote && <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">{invText(t, 'invGoalNoQuote')}</span>}
+                {notes.valueDate && <span>{invText(t, 'invGoalValueDate', { date: shortDate(notes.valueDate) })}</span>}
+              </div>
+            )}
             {monthlySavings !== null && monthlySavings > 0 && (
               <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                 <p className="text-xs font-medium text-gray-600 dark:text-gray-400">

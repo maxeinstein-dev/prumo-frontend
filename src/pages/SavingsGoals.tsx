@@ -43,6 +43,10 @@ import {
 } from '../utils/savingsGoalsPlan';
 import { goalsText, type GoalsTextKey } from '../utils/savingsGoalsTexts';
 import { LoadFailureNotice } from '../components/LoadFailureNotice';
+import { Link } from 'react-router-dom';
+import { goalProgress, goalUpdateData, goalValueNotes, isFromPositions, takesManualMoney } from '../utils/goalPositions';
+import { shortDate, investmentsPath } from '../utils/investments';
+import { invText } from '../utils/investmentsTexts';
 
 const PLAN_ERROR_KEY: Record<PlanError, GoalsTextKey> = {
   account: 'goalsErrAccountRequired',
@@ -70,6 +74,8 @@ const INPUT_CLS =
  * - Otherwise, use the manually tracked currentAmount.
  */
 function resolveGoalCurrentAmount(goal: SavingsGoal, accounts: Account[]): number {
+  // A goal fed by investment positions already carries the value (the sum of the positions)
+  if (isFromPositions(goal)) return goal.currentAmount;
   if (goal.accountId && !hasPlan(planDraftOf(goal))) {
     const linkedAccount = accounts.find((a) => a.id === goal.accountId);
     if (linkedAccount && linkedAccount.type === AccountType.INVESTMENT) {
@@ -80,7 +86,7 @@ function resolveGoalCurrentAmount(goal: SavingsGoal, accounts: Account[]): numbe
 }
 
 function isGoalSyncedWithInvestment(goal: SavingsGoal, accounts: Account[]): boolean {
-  if (!goal.accountId || hasPlan(planDraftOf(goal))) return false;
+  if (isFromPositions(goal) || !goal.accountId || hasPlan(planDraftOf(goal))) return false;
   const linkedAccount = accounts.find((a) => a.id === goal.accountId);
   return !!linkedAccount && linkedAccount.type === AccountType.INVESTMENT;
 }
@@ -219,7 +225,9 @@ const SavingsGoals = () => {
       // When linked to an investment account, currentAmount is auto-derived
       // from the account balance at render time. Send the synced value so
       // server-side views stay consistent until next sync.
-      const resolvedCurrentAmount = isLinkedToInvestment
+      const resolvedCurrentAmount = editingFromPositions
+        ? editingGoal?.currentAmount ?? 0
+        : isLinkedToInvestment
         ? Math.max(0, Number(linkedAccount?.totalBalance ?? linkedAccount?.balance ?? 0))
         : data.currentAmount || 0;
 
@@ -234,10 +242,8 @@ const SavingsGoals = () => {
 
       if (editingGoal?.id) {
         // The kept amount moves with the contributions: send it only when the user changed it here, so saving the form
-        // never overwrites a contribution made while it was open
-        const { currentAmount: sentAmount, ...rest } = goalData;
-        const changed = toCents(sentAmount) !== toCents(editingGoal.currentAmount || 0);
-        await updateSavingsGoal(editingGoal.id, changed ? goalData : rest);
+        // never overwrites a contribution made while it was open; and never for a goal fed by positions (the API refuses it)
+        await updateSavingsGoal(editingGoal.id, goalUpdateData(goalData, editingGoal));
         success('Meta atualizada com sucesso!');
       } else {
         await addSavingsGoal(goalData);
@@ -280,8 +286,9 @@ const SavingsGoals = () => {
   const formPlanErrors = planErrors(formDraft);
   const formHasPlan = hasPlan(formDraft);
   // A goal with a plan is moved by its contributions; only a goal without one follows the investment balance
+  const editingFromPositions = isFromPositions(editingGoal);
   const isLinkedToInvestment =
-    !!linkedAccount && linkedAccount.type === AccountType.INVESTMENT && !formHasPlan;
+    !!linkedAccount && linkedAccount.type === AccountType.INVESTMENT && !formHasPlan && !editingFromPositions;
   const provisionPreviewCents =
     plan.kind === 'PROVISION'
       ? provisionMonthlyCents({
@@ -427,8 +434,11 @@ const SavingsGoals = () => {
           savingsGoals.map((goal) => {
             const isSynced = isGoalSyncedWithInvestment(goal, accounts);
             const displayCurrentAmount = resolveGoalCurrentAmount(goal, accounts);
-            const progress = goal.targetAmount > 0 ? (displayCurrentAmount / goal.targetAmount) * 100 : 0;
-            const remaining = goal.targetAmount - displayCurrentAmount;
+            // The percent text may pass 100 (the market can pass the target); the bar never does
+            const { percent: progress, barPercent } = goalProgress({ targetAmount: goal.targetAmount, currentAmount: displayCurrentAmount });
+            const remaining = Math.max(0, goal.targetAmount - displayCurrentAmount);
+            const fromPositions = isFromPositions(goal);
+            const valueNotes = goalValueNotes(goal);
             const daysRemaining = goal.targetDate 
               ? Math.ceil((goal.targetDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
               : null;
@@ -497,12 +507,28 @@ const SavingsGoals = () => {
                   <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1">
                     <div
                       className="bg-primary-600 dark:bg-primary-500 h-1 rounded-full transition-all"
-                      style={{ width: `${Math.min(progress, 100)}%` }}
+                      style={{ width: `${barPercent}%` }}
                     />
                   </div>
                   <div className="mt-2 text-sm font-light text-gray-500 dark:text-gray-400">
                     {progress.toFixed(1)}% {t.completed}
                   </div>
+                  {fromPositions && (
+                    <div className="mt-3 space-y-2 rounded-md bg-gray-50 p-3 text-xs font-light text-gray-600 dark:bg-gray-800/60 dark:text-gray-300" data-testid="goal-from-positions">
+                      <p className="font-medium text-gray-700 dark:text-gray-200">{invText(t, 'invGoalFromPositionsN', { count: goal.positionsCount ?? 0 })}</p>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        {valueNotes.estimated && (
+                          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">{invText(t, 'invGoalEstimated')}</span>
+                        )}
+                        {valueNotes.noQuote && (
+                          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">{invText(t, 'invGoalNoQuote')}</span>
+                        )}
+                        {valueNotes.valueDate && <span>{invText(t, 'invGoalValueDate', { date: shortDate(valueNotes.valueDate) })}</span>}
+                      </div>
+                      <p>{invText(t, 'invGoalFromPositionsHint')}</p>
+                      <Link to={investmentsPath()} className="inline-flex min-h-[44px] items-center text-sm font-medium text-primary-700 hover:underline dark:text-primary-300">{invText(t, 'invGoalSeePositions')}</Link>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3 text-sm">
@@ -542,6 +568,8 @@ const SavingsGoals = () => {
                   )}
                 </div>
                 {(() => {
+                  // A goal fed by positions takes no "guardar" and no planned contribution: the money is in the positions
+                  if (!takesManualMoney(goal)) return null;
                   const view = thisMonthView(goal.thisMonth, today);
                   const contributable = canContribute(goal);
                   if (!contributable && view.status === 'none' && !goal.accountId) return null;
@@ -765,7 +793,9 @@ const SavingsGoals = () => {
                 <input
                   type="text"
                   value={
-                    isLinkedToInvestment
+                    editingFromPositions
+                      ? formatCurrency(editingGoal?.currentAmount ?? 0, baseCurrency)
+                      : isLinkedToInvestment
                       ? formatCurrency(
                           Math.max(
                             0,
@@ -775,8 +805,8 @@ const SavingsGoals = () => {
                         )
                       : currentAmountMask.value
                   }
-                  readOnly={isLinkedToInvestment}
-                  disabled={isLinkedToInvestment}
+                  readOnly={isLinkedToInvestment || editingFromPositions}
+                  disabled={isLinkedToInvestment || editingFromPositions}
                   onChange={(e) => {
                     currentAmountMask.onChange(e);
                     const numericValue = parseCurrencyValue(e.target.value);
@@ -784,7 +814,7 @@ const SavingsGoals = () => {
                   }}
                   placeholder={t.currencyPlaceholder}
                   className={`block w-full px-3 py-2.5 border rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 dark:focus:border-primary-500 sm:text-sm font-light tracking-tight ${
-                    isLinkedToInvestment ? 'cursor-not-allowed opacity-70' : ''
+                    isLinkedToInvestment || editingFromPositions ? 'cursor-not-allowed opacity-70' : ''
                   } ${
                     errors.currentAmount ? 'border-red-300 dark:border-red-600' : 'border-gray-200 dark:border-gray-800'
                   }`}
@@ -795,7 +825,9 @@ const SavingsGoals = () => {
                     valueAsNumber: true,
                   })}
                 />
-                {isLinkedToInvestment ? (
+                {editingFromPositions ? (
+                  <p className="mt-1 text-xs font-light text-gray-500 dark:text-gray-400">{invText(t, 'invGoalAmountField')}</p>
+                ) : isLinkedToInvestment ? (
                   <p className="mt-1 text-xs font-light text-gray-400 dark:text-gray-500 inline-flex items-center gap-1">
                     <Link2 className="h-3 w-3" />
                     {t.goalSyncedWithAccount ||
