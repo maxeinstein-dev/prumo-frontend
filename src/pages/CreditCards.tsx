@@ -635,9 +635,15 @@ const CreditCards = () => {
     setIsPayModalOpen(true);
   };
 
+  // A second tap before the re-render (isPending only arrives after it) must not pay twice: the ref closes the gap.
+  const payInFlight = useRef(false);
+  const undoInFlight = useRef(false);
+
   const handlePayInvoice = async () => {
     if (!selectedAccount || !paymentSourceAccountId || paymentAmount <= 0)
       return;
+    if (payInFlight.current || payInvoiceMutation.isPending) return;
+    payInFlight.current = true;
 
     try {
       const monthName = format(selectedMonth, "MMMM", {
@@ -662,18 +668,22 @@ const CreditCards = () => {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t.errorPayingInvoice;
       showError(message);
+    } finally {
+      payInFlight.current = false;
     }
   };
 
   const handleUndoPayment = async () => {
     if (!selectedAccount) return;
+    if (undoInFlight.current || undoPaymentMutation.isPending) return;
+    undoInFlight.current = true;
 
     try {
       // Find payment transaction for this month
       const paymentTransaction = invoiceStats.paymentTransactions?.[0];
       
       if (!paymentTransaction || !paymentTransaction.id) {
-        showError(t.errorUndoingPayment || 'Payment transaction not found');
+        showError(t.errorUndoingPayment || 'Não encontramos o pagamento desta fatura.');
         return;
       }
 
@@ -688,6 +698,8 @@ const CreditCards = () => {
       const message =
         err instanceof Error ? err.message : t.errorUndoingPayment;
       showError(message);
+    } finally {
+      undoInFlight.current = false;
     }
   };
 
@@ -768,7 +780,7 @@ const CreditCards = () => {
             <div className="flex flex-col gap-3 pt-6 border-t border-gray-100 dark:border-gray-800">
               <button
                 onClick={handlePayInvoice}
-                disabled={!paymentSourceAccountId || paymentAmount <= 0}
+                disabled={!paymentSourceAccountId || paymentAmount <= 0 || payInvoiceMutation.isPending}
                 className="w-full px-4 py-2.5 text-sm font-light tracking-tight text-white bg-primary-600 dark:bg-primary-500 border border-primary-600 dark:border-primary-500 rounded-md hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed order-1"
               >
                 {t.confirmInvoicePayment}
@@ -802,7 +814,8 @@ const CreditCards = () => {
         <div className="flex flex-col gap-3">
           <button
             onClick={handleUndoPayment}
-            className="w-full px-4 py-2.5 text-sm font-light tracking-tight text-white bg-red-500 dark:bg-red-500 border border-red-500 dark:border-red-500 rounded-md hover:opacity-80 transition-opacity order-1"
+            disabled={undoPaymentMutation.isPending}
+            className="w-full px-4 py-2.5 text-sm font-light tracking-tight text-white bg-red-500 dark:bg-red-500 border border-red-500 dark:border-red-500 rounded-md hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed order-1"
           >
             {t.undoInvoicePayment}
           </button>
