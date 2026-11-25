@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import NetWorthChart from '../components/networth/NetWorthChart';
 import ValuationForm from '../components/networth/ValuationForm';
@@ -7,6 +9,9 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useDefaultHousehold } from '../hooks/useDefaultHousehold';
 import { useAccounts } from '../hooks/api/useAccounts';
 import { useNetWorth } from '../hooks/api/useNetWorth';
+import { useAccountsWithPositions } from '../hooks/api/useInvestments';
+import { investmentsPath, valuationAccounts } from '../utils/investments';
+import { invText } from '../utils/investmentsTexts';
 import { formatCurrency } from '../utils/format';
 import {
   DEFAULT_NET_WORTH_MONTHS,
@@ -58,6 +63,12 @@ const NetWorth = () => {
   const query = useNetWorth({ householdId, months });
   const accounts = useAccounts({ householdId: householdId ?? '' });
   const investAccounts = useMemo(() => investmentAccounts(accounts.data?.accounts ?? []), [accounts.data]);
+  // An account that has positions takes its value from them (Investimentos page): no typed value for it.
+  const positionsOf = useAccountsWithPositions(useMemo(() => investAccounts.map((a) => a.id), [investAccounts]));
+  const valuationList = useMemo(
+    () => (positionsOf.pending ? [] : valuationAccounts(investAccounts, positionsOf.withPositions)),
+    [investAccounts, positionsOf.pending, positionsOf.withPositions],
+  );
 
   const data = query.data;
   const currency = data?.currency ?? baseCurrency;
@@ -80,7 +91,16 @@ const NetWorth = () => {
 
   return (
     <div className="space-y-4">
-      <PageHeader title={tx('netWorthTitle')} description={tx('netWorthDescription')} />
+      <PageHeader title={tx('netWorthTitle')} description={tx('netWorthDescription')}>
+        {investAccounts.length > 0 ? (
+          <Link
+            to={investmentsPath()}
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-md border border-gray-200 bg-white px-4 text-sm font-light tracking-tight text-gray-900 hover:opacity-80 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+          >
+            {invText(t, 'invNavLabel')}
+          </Link>
+        ) : null}
+      </PageHeader>
 
       <div role="tablist" aria-label={tx('netWorthPeriodLabel')} className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 max-w-sm">
         {NET_WORTH_PERIODS.map((p) => (
@@ -141,13 +161,32 @@ const NetWorth = () => {
                     <ul className="mt-1 divide-y divide-gray-100 dark:divide-gray-800">
                       {g.items.map((item) => {
                         const note = itemNote(item);
+                        const amountEl = <span className={`text-sm tabular-nums whitespace-nowrap ${moneyClass(item.amount)}`}>{money(item.amount)}</span>;
+                        // An investment account with positions: the line goes to the Investimentos page.
+                        if (item.kind === 'investment' && positionsOf.withPositions.has(item.id)) {
+                          return (
+                            <li key={`${item.kind}-${item.id}`}>
+                              <Link to={investmentsPath(item.id)} className="flex min-h-[44px] items-start justify-between gap-3 py-2">
+                                <div className="min-w-0">
+                                  <p className="text-sm text-gray-900 dark:text-white break-words">{item.name}</p>
+                                  {note && <p className="text-xs text-gray-500 dark:text-gray-400">{note}</p>}
+                                  <p className="text-xs text-primary-700 dark:text-primary-300">{invText(t, 'invNetWorthSeePositions')}</p>
+                                </div>
+                                <span className="flex items-center gap-1">
+                                  {amountEl}
+                                  <ChevronRight className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                                </span>
+                              </Link>
+                            </li>
+                          );
+                        }
                         return (
                           <li key={`${item.kind}-${item.id}`} className="flex items-start justify-between gap-3 py-2">
                             <div className="min-w-0">
                               <p className="text-sm text-gray-900 dark:text-white break-words">{item.name}</p>
                               {note && <p className="text-xs text-gray-500 dark:text-gray-400">{note}</p>}
                             </div>
-                            <span className={`text-sm tabular-nums whitespace-nowrap ${moneyClass(item.amount)}`}>{money(item.amount)}</span>
+                            {amountEl}
                           </li>
                         );
                       })}
@@ -192,7 +231,7 @@ const NetWorth = () => {
       )}
 
       {investAccounts.length > 0 ? (
-        <ValuationForm accounts={investAccounts} currency={currency} />
+        valuationList.length > 0 && <ValuationForm accounts={valuationList} currency={currency} />
       ) : (
         accounts.data && (
           <section className={CARD_CLS}>
