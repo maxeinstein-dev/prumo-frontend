@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosError, AxiosRequestConfig, InternalAxiosRequ
 import { getLocalToken } from './localToken';
 import { getCachedAuthMode } from '../config/authMode';
 import { endExpiredLocalSession, shouldEndLocalSession, tokenSourceFor } from './localSession';
+import { NETWORK_NO_RESPONSE_MESSAGE, httpErrorMessage, networkErrorMessage } from './networkMessages';
 
 export { TOKEN_KEY, getLocalToken, setLocalToken, clearLocalToken } from './localToken';
 
@@ -20,7 +21,7 @@ export interface ApiResponse<T> {
  * Allows distinguishing network errors from other API errors
  */
 export class NetworkError extends Error {
-  constructor(message: string = 'Network error: No response from server') {
+  constructor(message: string = NETWORK_NO_RESPONSE_MESSAGE) {
     super(message);
     this.name = 'NetworkError';
     Object.setPrototypeOf(this, NetworkError.prototype);
@@ -31,8 +32,8 @@ export class NetworkError extends Error {
  * Check if an error is a network error
  */
 export function isNetworkError(error: unknown): error is NetworkError {
-  return error instanceof NetworkError || 
-         (error instanceof Error && error.message.includes('Network error'));
+  return error instanceof NetworkError ||
+         (error instanceof Error && (error.name === 'NetworkError' || error.message.includes('Network error')));
 }
 
 export interface PaginatedResponse<T> {
@@ -168,7 +169,7 @@ axiosInstance.interceptors.response.use(
         endExpiredLocalSession();
       }
       const data = error.response.data as unknown;
-      const errorMessage = getBackendErrorMessage(data) || `HTTP ${error.response.status}`;
+      const errorMessage = getBackendErrorMessage(data) || httpErrorMessage(error.response.status);
       
       // Create a more descriptive error
       const apiError = new Error(errorMessage) as Error & { status?: number; data?: unknown; code?: string; details?: unknown };
@@ -183,19 +184,8 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(apiError);
     } else if (error.request) {
       // Request was made but no response received
-      // Check if it's a timeout or connection error
-      const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout');
-      const isConnectionError = error.code === 'ERR_NETWORK' || 
-                               error.code === 'ECONNREFUSED' ||
-                               error.message?.includes('Network Error');
-      
-      const errorMessage = isTimeout 
-        ? 'Network error: Request timeout - server took too long to respond'
-        : isConnectionError
-        ? 'Network error: Unable to connect to server'
-        : 'Network error: No response from server';
-      
-      return Promise.reject(new NetworkError(errorMessage));
+      // Timeout, connection failure or no answer: the text (in Portuguese) comes from utils/networkMessages
+      return Promise.reject(new NetworkError(networkErrorMessage(error)));
     } else {
       // Something else happened
       return Promise.reject(error);

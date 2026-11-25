@@ -192,6 +192,10 @@ export interface TransactionsContextType {
   accounts: Account[];
   savingsGoals: SavingsGoal[];
   loading: boolean;
+  /** Per list: the request failed and there is no data to show (a failure, not an empty list). */
+  loadFailed: { transactions: boolean; accounts: boolean; budgets: boolean; recurring: boolean; savingsGoals: boolean };
+  /** Asks again for the lists that failed to load. */
+  retryLoad: () => void;
   /** Resolves with the id of the created transaction (undefined when the server did not answer one). */
   addTransaction: (transaction: Omit<Transaction, 'id' | 'userId'>) => Promise<string | undefined | void>;
   /** Resolves with the notice of the recurrence the server updated (phase 5), when it did. */

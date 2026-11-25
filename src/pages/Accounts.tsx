@@ -53,6 +53,8 @@ import TransactionModal from "../components/TransactionModal";
 import ConfirmModal from "../components/ConfirmModal";
 import { CategoryName, getCategoryDisplayName, TransactionType, getCategoryIconName } from "../lib/enums";
 import { EmptyState } from "../components/EmptyState";
+import { LoadFailureNotice } from "../components/LoadFailureNotice";
+import { isLoadFailure } from "../utils/loadFailure";
 import type React from "react";
 import { useToastContext } from "../context/ToastContext";
 import { updateFailureMessage } from "../utils/transactionConflict";
@@ -61,7 +63,7 @@ import { canWritePeople } from "../utils/people";
 
 const Accounts = () => {
   const { error: showError } = useToastContext();
-  const { accounts: allAccounts, deleteAccount, deleteTransaction, updateTransaction, loading, customCategories } = useTransactions();
+  const { accounts: allAccounts, deleteAccount, deleteTransaction, updateTransaction, loading, loadFailed, retryLoad, customCategories } = useTransactions();
   const { baseCurrency } = useCurrency();
   const { t, locale } = useI18n();
   const { registerHandler, unregisterHandler } = useCommandMenu();
@@ -177,7 +179,8 @@ const Accounts = () => {
   }, [householdId, selectedAccountId, selectedMonth]);
 
   // Fetch transactions with pagination
-  const { data: transactionsData, isLoading: transactionsLoading } = useTransactionsQuery(transactionsQuery);
+  const { data: transactionsData, isLoading: transactionsLoading, isError: transactionsError, refetch: refetchTransactions } = useTransactionsQuery(transactionsQuery);
+  const transactionsFailed = isLoadFailure({ isError: transactionsError, data: transactionsData });
   const loadMoreMutation = useLoadMoreTransactions();
 
   // Convert backend transactions to frontend format
@@ -592,6 +595,16 @@ const Accounts = () => {
     return <AccountsSkeleton />;
   }
 
+  // The accounts request failed and there is nothing to show: not "no accounts" (that would invite creating a duplicate).
+  if (accounts.length === 0 && loadFailed.accounts) {
+    return (
+      <div className="px-4 sm:px-6 lg:px-8 dashboard-fade-in">
+        <PageHeader title={t.accounts} description={t.accountsDescription} />
+        <LoadFailureNotice onRetry={retryLoad} />
+      </div>
+    );
+  }
+
   if (accounts.length === 0) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 dashboard-fade-in">
@@ -757,7 +770,9 @@ const Accounts = () => {
                   )}
                 </div>
 
-                {transactionsLoading && transactions.length === 0 ? (
+                {transactionsFailed && transactions.length === 0 ? (
+                  <LoadFailureNotice onRetry={() => void refetchTransactions()} />
+                ) : transactionsLoading && transactions.length === 0 ? (
                   <div className="space-y-4 animate-pulse">
                     {[1, 2, 3, 4, 5].map((i) => (
                       <div key={i} className="flex items-center justify-between p-3">

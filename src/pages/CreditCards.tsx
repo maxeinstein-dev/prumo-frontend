@@ -64,6 +64,7 @@ import {
 } from "../hooks/api/useTransactions";
 import { useDefaultHousehold } from "../hooks/useDefaultHousehold";
 import { useIsMobileShell } from "../hooks/useIsMobileShell";
+import { useToday } from "../hooks/useToday";
 import { useSelectedMonth } from "../context/SelectedMonthContext";
 import MobileCreditCards from "../components/credit-cards/MobileCreditCards";
 import { addMonthKey, invoiceMemo, monthStartOf, openInvoiceMonthKey, openingInvoiceMonth } from "../utils/cardsMobile";
@@ -95,8 +96,9 @@ const CreditCards = () => {
   // Mobile shell (below 768 px): the month of the header chooses the invoice; the desktop keeps its own navigator.
   const isMobileShell = useIsMobileShell();
   const { monthKey: headerMonthKey, setMonthKey: setHeaderMonthKey } = useSelectedMonth();
-  // The day of the visit (fixed while the screen is open), used to tell the open invoice from the closed ones.
-  const [todayIso] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  // The current day, used to tell the open invoice from the closed ones
+  // (refreshed when the app comes back to the front; the card's opening month, already decided, is not re-decided).
+  const todayIso = useToday();
   // The user chose a month by hand in this visit: from then on the rule does not pick the month of this visit.
   const manualMonthRef = useRef(false);
   // The header month this screen last wrote. Starts as the header at entry, so that is not read as a choice.
@@ -635,9 +637,15 @@ const CreditCards = () => {
     setIsPayModalOpen(true);
   };
 
+  // A second tap before the re-render (isPending only arrives after it) must not pay twice: the ref closes the gap.
+  const payInFlight = useRef(false);
+  const undoInFlight = useRef(false);
+
   const handlePayInvoice = async () => {
     if (!selectedAccount || !paymentSourceAccountId || paymentAmount <= 0)
       return;
+    if (payInFlight.current || payInvoiceMutation.isPending) return;
+    payInFlight.current = true;
 
     try {
       const monthName = format(selectedMonth, "MMMM", {
@@ -662,18 +670,22 @@ const CreditCards = () => {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t.errorPayingInvoice;
       showError(message);
+    } finally {
+      payInFlight.current = false;
     }
   };
 
   const handleUndoPayment = async () => {
     if (!selectedAccount) return;
+    if (undoInFlight.current || undoPaymentMutation.isPending) return;
+    undoInFlight.current = true;
 
     try {
       // Find payment transaction for this month
       const paymentTransaction = invoiceStats.paymentTransactions?.[0];
       
       if (!paymentTransaction || !paymentTransaction.id) {
-        showError(t.errorUndoingPayment || 'Payment transaction not found');
+        showError(t.errorUndoingPayment || 'Não encontramos o pagamento desta fatura.');
         return;
       }
 
@@ -688,6 +700,8 @@ const CreditCards = () => {
       const message =
         err instanceof Error ? err.message : t.errorUndoingPayment;
       showError(message);
+    } finally {
+      undoInFlight.current = false;
     }
   };
 
@@ -768,7 +782,7 @@ const CreditCards = () => {
             <div className="flex flex-col gap-3 pt-6 border-t border-gray-100 dark:border-gray-800">
               <button
                 onClick={handlePayInvoice}
-                disabled={!paymentSourceAccountId || paymentAmount <= 0}
+                disabled={!paymentSourceAccountId || paymentAmount <= 0 || payInvoiceMutation.isPending}
                 className="w-full px-4 py-2.5 text-sm font-light tracking-tight text-white bg-primary-600 dark:bg-primary-500 border border-primary-600 dark:border-primary-500 rounded-md hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed order-1"
               >
                 {t.confirmInvoicePayment}
@@ -802,7 +816,8 @@ const CreditCards = () => {
         <div className="flex flex-col gap-3">
           <button
             onClick={handleUndoPayment}
-            className="w-full px-4 py-2.5 text-sm font-light tracking-tight text-white bg-red-500 dark:bg-red-500 border border-red-500 dark:border-red-500 rounded-md hover:opacity-80 transition-opacity order-1"
+            disabled={undoPaymentMutation.isPending}
+            className="w-full px-4 py-2.5 text-sm font-light tracking-tight text-white bg-red-500 dark:bg-red-500 border border-red-500 dark:border-red-500 rounded-md hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed order-1"
           >
             {t.undoInvoicePayment}
           </button>

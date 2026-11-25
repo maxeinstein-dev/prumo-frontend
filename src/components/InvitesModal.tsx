@@ -85,10 +85,12 @@ export function InvitesModal({ isOpen, onClose, selectedInviteId }: InvitesModal
                 {t.myInvites}
               </h3>
               <button
+                type="button"
                 onClick={onClose}
+                aria-label={t.close}
                 className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
 

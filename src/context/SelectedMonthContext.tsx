@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, ReactNode } from 'react';
 import { monthKeyOf, shiftMonthKey } from '../utils/mobileShell';
+import { monthOfDayKey } from '../utils/currentDay';
+import { useToday } from '../hooks/useToday';
 
 /**
  * The month chosen in the mobile header. Starts at the current month each time the app opens (state lives in memory,
@@ -18,7 +20,10 @@ interface SelectedMonthValue {
 const SelectedMonthContext = createContext<SelectedMonthValue | undefined>(undefined);
 
 export const SelectedMonthProvider = ({ children }: { children: ReactNode }) => {
-  const currentKey = monthKeyOf(new Date());
+  // "Current month" follows the clock: it is asked again when the app becomes visible (on the phone it stays days in the
+  // background). The month on display is never moved by that: if the month turned while the app slept, the screen stays
+  // where it was and only "is this the current month?" changes (the header then offers the way back to the new one).
+  const currentKey = monthOfDayKey(useToday());
   const [monthKey, setMonthKey] = useState<string>(currentKey);
 
   const previousMonth = useCallback(() => setMonthKey((k) => shiftMonthKey(k, -1)), []);

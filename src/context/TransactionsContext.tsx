@@ -55,6 +55,7 @@ import { analyticsHelpers } from '../utils/analytics';
 import { CategoryName, CategoryType, RecurrenceFrequency, getCategoryDisplayName, getCategoryNameFromDisplay, parseCategoryName, getAllCategoryNames, getCategoriesByType, TransactionType, AccountType, isCustomCategoryName, toCategoryName, CUSTOM_CATEGORY_PREFIX, CustomCategoryInfo } from '../lib/enums';
 import { useI18n } from './I18nContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { isLoadFailure } from '../utils/loadFailure';
 import { useCategories } from '../hooks/api/useCategories';
 
 // Import parseDateFromAPI and formatDateForAPI from utils
@@ -376,11 +377,11 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
 
   // Only fetch when authenticated AND householdId is available
   // These queries have enabled checks in their hooks, but we also check here to avoid unnecessary query registration
-  const { data: transactionsData, isLoading: transactionsLoading } = useTransactionsBackend(transactionsParams);
-  const { data: accountsData, isLoading: accountsLoading } = useAccountsBackend(accountsParams);
-  const { data: budgetsData, isLoading: budgetsLoading } = useBudgetsBackend(budgetsParams);
-  const { data: recurringData, isLoading: recurringLoading } = useRecurringTransactionsBackend(recurringParams);
-  const { data: savingsGoalsData, isLoading: savingsGoalsLoading } = useSavingsGoalsBackend(savingsGoalsParams);
+  const { data: transactionsData, isLoading: transactionsLoading, isError: transactionsError, refetch: refetchTransactions } = useTransactionsBackend(transactionsParams);
+  const { data: accountsData, isLoading: accountsLoading, isError: accountsError, refetch: refetchAccounts } = useAccountsBackend(accountsParams);
+  const { data: budgetsData, isLoading: budgetsLoading, isError: budgetsError, refetch: refetchBudgets } = useBudgetsBackend(budgetsParams);
+  const { data: recurringData, isLoading: recurringLoading, isError: recurringError, refetch: refetchRecurring } = useRecurringTransactionsBackend(recurringParams);
+  const { data: savingsGoalsData, isLoading: savingsGoalsLoading, isError: savingsGoalsError, refetch: refetchSavingsGoals } = useSavingsGoalsBackend(savingsGoalsParams);
   const { data: categoriesData = [] } = useCategories({ householdId: householdId ?? undefined, type: undefined });
   const custom = useMemo(() =>
     categoriesData.filter((c: { isSystem: boolean }) => !c.isSystem).map((c: { id: string; name: string; type: string; color?: string | null; icon?: string | null }) =>
@@ -500,6 +501,24 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
   // Se não estiver autenticado, sempre mostrar loading para evitar mostrar dados antigos
   const loading = !isAuthenticated || householdLoading || transactionsLoading || 
                   accountsLoading || budgetsLoading || recurringLoading || savingsGoalsLoading;
+
+  // A failed request with nothing to show must not read as an empty list (utils/loadFailure).
+  const failedTransactions = isLoadFailure({ isError: transactionsError, data: transactionsData });
+  const failedAccounts = isLoadFailure({ isError: accountsError, data: accountsData });
+  const failedBudgets = isLoadFailure({ isError: budgetsError, data: budgetsData });
+  const failedRecurring = isLoadFailure({ isError: recurringError, data: recurringData });
+  const failedSavingsGoals = isLoadFailure({ isError: savingsGoalsError, data: savingsGoalsData });
+  const loadFailed = useMemo(
+    () => ({ transactions: failedTransactions, accounts: failedAccounts, budgets: failedBudgets, recurring: failedRecurring, savingsGoals: failedSavingsGoals }),
+    [failedTransactions, failedAccounts, failedBudgets, failedRecurring, failedSavingsGoals],
+  );
+  const retryLoad = useCallback(() => {
+    if (failedTransactions) void refetchTransactions();
+    if (failedAccounts) void refetchAccounts();
+    if (failedBudgets) void refetchBudgets();
+    if (failedRecurring) void refetchRecurring();
+    if (failedSavingsGoals) void refetchSavingsGoals();
+  }, [failedTransactions, failedAccounts, failedBudgets, failedRecurring, failedSavingsGoals, refetchTransactions, refetchAccounts, refetchBudgets, refetchRecurring, refetchSavingsGoals]);
 
   // Transaction functions
   const addTransaction = useCallback(async (transaction: Omit<Transaction, 'id' | 'userId'>): Promise<string | undefined> => {
@@ -1095,6 +1114,8 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
     accounts,
     savingsGoals,
     loading,
+    loadFailed,
+    retryLoad,
     addTransaction,
     updateTransaction: updateTransactionFn,
     deleteTransaction: deleteTransactionFn,
@@ -1126,6 +1147,8 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
     accounts,
     savingsGoals,
     loading,
+    loadFailed,
+    retryLoad,
     addTransaction,
     updateTransactionFn,
     deleteTransactionFn,
