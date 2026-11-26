@@ -20,6 +20,8 @@ import { VersionUpdatePrompt } from './components/VersionUpdatePrompt';
 // import { InstallPrompt } from './components/InstallPrompt'; // Desativado temporariamente
 import { MaintenanceModal } from './components/MaintenanceModal';
 import { useMaintenanceMode } from './hooks/useMaintenanceMode';
+import { publicHomeTarget } from './utils/landingRoute';
+import { isNativeApp } from './native/captureReader';
 
 // Lazy load pages for better code splitting and initial bundle size
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -153,8 +155,9 @@ class LazyLoadErrorBoundary extends Component<
 
 const LandingRoute = () => {
   const { currentUser } = useAuth();
-  if (currentUser) {
-    return <Navigate to="/app" replace />;
+  const target = publicHomeTarget({ signedIn: !!currentUser, native: isNativeApp() });
+  if (target) {
+    return <Navigate to={target} replace />;
   }
   return <LandingPage />;
 };

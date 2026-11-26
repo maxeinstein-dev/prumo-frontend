@@ -250,7 +250,7 @@ const LandingPage = () => {
       />
       
       {/* Navigation */}
-      <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 animate-fade-in-up" aria-label={t.landingNavAriaLabel}>
+      <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 animate-fade-in-up" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }} aria-label={t.landingNavAriaLabel}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link
@@ -871,7 +871,8 @@ const LandingPage = () => {
           toggleTheme();
           analyticsHelpers.logLandingThemeToggled(theme === 'dark' ? 'light' : 'dark');
         }}
-        className="fixed bottom-6 right-6 z-50 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 border border-gray-200 dark:border-gray-700"
+        style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
+        className="fixed right-6 z-50 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 border border-gray-200 dark:border-gray-700"
         aria-label="Toggle theme"
       >
         {theme === 'dark' ? (

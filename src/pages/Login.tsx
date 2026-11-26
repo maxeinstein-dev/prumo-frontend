@@ -124,7 +124,12 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8"
+      style={{
+        paddingTop: 'calc(3rem + env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(3rem + env(safe-area-inset-bottom, 0px))',
+      }}
+    >
       {/* Back to Home Link */}
       <div className="w-full max-w-md mb-4">
         <Link
