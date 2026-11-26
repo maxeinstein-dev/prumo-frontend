@@ -5,13 +5,14 @@ import { useAccounts } from '../hooks/api/useAccounts';
 import { useDefaultHousehold } from '../hooks/useDefaultHousehold';
 import { useToastContext } from '../context/ToastContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { formatCurrency, formatDate } from '../utils/format';
+import { formatCurrency, formatDate, parseDateFromAPI } from '../utils/format';
 import { isCardOfxHandoff } from '../utils/cardOfx';
 import ImportCardOfxDialog from './ImportCardOfxDialog';
 import { QueueHeader, QueueProgressList } from './ImportQueuePanel';
 import {
-  STATEMENT_NOTHING_NEW_QUEUE_NOTE, planStatementDefaultApply, statementConfirmRows, statementImportNote, statementQueueControls,
+  STATEMENT_NOTHING_NEW_QUEUE_NOTE, planStatementDefaultApply, statementConfirmRows, statementImportNote, statementNewCount, statementQueueControls,
 } from '../utils/statementQueue';
+import { confirmFailureMessage, skippedLineLabel, skippedReasonText, skippedSummary } from '../utils/importStatement';
 import {
   applyDefaultsToRemaining, completeCurrent, createQueue, currentPhase, failCurrent, followingCount, isQueueFinished, markUpToDateCurrent, queueSummaryLine,
   retryCurrent, skipCurrent,
@@ -265,12 +266,12 @@ const ImportTransactionsDialog = ({
       confirmingRef.current = true;
       try {
         const result = await confirmMutation.mutateAsync({ householdId, accountId: queueAccountId, rows: plan.rows });
-        const count = result?.imported ?? plan.rows.length;
+        const count = result?.imported ?? plan.newCount;
         imported += count;
         success(statementImportNote(count) + '.');
         return { ok: true, note: statementImportNote(count) };
       } catch (err: unknown) {
-        const message = getErrorMessage(err, 'Não foi possível confirmar a importação.');
+        const message = confirmFailureMessage(err);
         showError(message);
         return { ok: false, written: true, reason: message };
       } finally {
@@ -380,16 +381,18 @@ const ImportTransactionsDialog = ({
       setFormError('Selecione a conta de destino.');
       return;
     }
-    // Só vão as linhas que o preview marcou como novas; o servidor confere duplicatas de novo ao gravar.
-    const newRows = statementConfirmRows(preview);
-    if (newRows.length === 0 || confirmingRef.current) return;
+    // Vai o arquivo inteiro, duplicatas incluídas: o servidor reconhece o que já está na conta pela mesma regra da
+    // prévia (a N-ésima linha idêntica só é duplicata se a conta já tem N) e só dá o mesmo resultado sobre a mesma lista.
+    const sentRows = statementConfirmRows(preview);
+    const newTotal = statementNewCount(preview);
+    if (newTotal === 0 || confirmingRef.current) return;
     confirmingRef.current = true;
     // O dialog fica fechado do confirmar até o fim do loop.
     if (thenApply) applyingRef.current = true;
     let loopFrom: QueueState | null = null;
     try {
-      const result = await confirmMutation.mutateAsync({ householdId, accountId, rows: newRows });
-      const imported = result?.imported ?? newRows.length;
+      const result = await confirmMutation.mutateAsync({ householdId, accountId, rows: sentRows });
+      const imported = result?.imported ?? newTotal;
       success(
         imported === 1
           ? '1 transação importada com sucesso.'
@@ -411,7 +414,7 @@ const ImportTransactionsDialog = ({
         onClose();
       }
     } catch (err: unknown) {
-      const message = getErrorMessage(err, 'Não foi possível confirmar a importação.');
+      const message = confirmFailureMessage(err);
       showError(message);
       // Na fila, o arquivo fica bloqueado até a pré-visualização ser atualizada (o que entrou volta como duplicada).
       if (queue && mountedRef.current) {
@@ -434,6 +437,8 @@ const ImportTransactionsDialog = ({
   const rows = preview?.rows ?? [];
   const newCount = preview?.newCount ?? rows.filter((row) => !row.duplicate).length;
   const duplicateCount = preview?.duplicateCount ?? rows.filter((row) => row.duplicate).length;
+  const skippedRows = preview?.skipped ?? [];
+  const skippedCount = preview?.skippedCount ?? skippedRows.length;
 
   return createPortal(
     <div className="fixed inset-0 z-[60] overflow-y-auto">
@@ -637,6 +642,27 @@ const ImportTransactionsDialog = ({
                 </span>
               </div>
 
+              {skippedCount > 0 && (
+                <div
+                  role="status"
+                  className="rounded-md border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 p-3 text-sm text-yellow-900 dark:text-yellow-200"
+                >
+                  <p className="font-medium">{skippedSummary(skippedCount)}</p>
+                  <ul className="mt-1 max-h-32 overflow-y-auto list-disc pl-5 space-y-0.5">
+                    {skippedRows.map((item) => (
+                      <li key={`${item.line}-${item.reason}`}>
+                        {skippedLineLabel(item.line, file?.name)}: {skippedReasonText(item.reason)}
+                      </li>
+                    ))}
+                  </ul>
+                  {skippedCount > skippedRows.length && (
+                    <p className="mt-1 text-xs">
+                      E mais {skippedCount - skippedRows.length} (só as primeiras {skippedRows.length} aparecem aqui).
+                    </p>
+                  )}
+                </div>
+              )}
+
               {rows.length === 0 ? (
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Nenhuma transação encontrada no arquivo.
@@ -674,7 +700,7 @@ const ImportTransactionsDialog = ({
                           }
                         >
                           <td className="px-3 py-2 whitespace-nowrap text-gray-900 dark:text-white">
-                            {formatDate(row.date)}
+                            {formatDate(parseDateFromAPI(row.date))}
                           </td>
                           <td className="px-3 py-2 text-gray-900 dark:text-white max-w-[220px] truncate">
                             {row.description}

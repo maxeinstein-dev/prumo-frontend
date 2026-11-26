@@ -1,13 +1,5 @@
 {
   "_about": "Start of a test name -> the branch its expectation comes from. See tests/pending.mjs. Remove an entry when that branch lands.",
-  "statementConfirmRows: every row of the file, duplicates included": "fix/generic-import-correctness (local, not published): the confirm sends the whole statement, duplicates included",
-  "planStatementDefaultApply: the whole file goes when something is new": "fix/generic-import-correctness (local, not published): newCount and duplicates in the confirm",
-  "H6 a bank statement goes to a non-credit account": "fix/generic-import-correctness (local, not published): the duplicate row goes in the confirm",
-  "S1 two statements:": "fix/generic-import-correctness (local, not published): whole statement in the confirm",
-  "S2 \"Confirmar esta e aplicar o padrão nas restantes\"": "fix/generic-import-correctness (local, not published): whole statement in the confirm",
-  "G1 the preview shows the day printed in the file": "fix/generic-import-correctness (local, not published): file day and unreadable lines in the preview",
-  "G2 the confirm sends the whole file": "fix/generic-import-correctness (local, not published): duplicates in the confirm, timeout by row count",
-  "G3 a timeout says the import may still be running": "fix/generic-import-correctness (local, not published): timeout and 409 messages",
   "P-D20 Tab and Shift+Tab stay inside the dialog": "series/17-people-shares and series/18-settlements-split (PRs for the original project): Tab trap in DialogShell",
   "P-L8 opening the delete confirmation moves focus to Cancelar": "series/17-people-shares and series/18-settlements-split (PRs for the original project): focus on Cancelar"
 }

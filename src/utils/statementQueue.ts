@@ -5,27 +5,37 @@
 import { countLabel } from './maxfinPayload';
 import type { ConfirmImportRow, ImportPreview } from '../hooks/api/useImportTransactions';
 
-/** Only the rows the preview marked as new go in (the server checks duplicates again when it writes). */
+/**
+ * Every row of the preview goes in, duplicates included. The server finds the rows already on the account by occurrence
+ * (the Nth identical row is a duplicate only when the account holds N) and skips them, and it only counts like the
+ * preview when it sees the same list: sending just the "new" rows made it count over a subset, so three identical rows
+ * in the file with one on the account imported 1 instead of 2.
+ */
 export function statementConfirmRows(preview: Pick<ImportPreview, 'rows'>): ConfirmImportRow[] {
-  return preview.rows.filter((row) => !row.duplicate).map(({ date, description, amount, type }) => ({ date, description, amount, type }));
+  return preview.rows.map(({ date, description, amount, type }) => ({ date, description, amount, type }));
+}
+
+/** How many rows of the preview are not on the account yet (what a confirm will import). */
+export function statementNewCount(preview: Pick<ImportPreview, 'rows'>): number {
+  return preview.rows.filter((row) => !row.duplicate).length;
 }
 
 export const STATEMENT_EMPTY_FILE = 'Nenhuma transação encontrada no arquivo.';
 export const STATEMENT_NOTHING_NEW = 'Nenhuma transação nova neste arquivo: todas as linhas já estão no Prumo.';
 
 export type StatementDefaultPlan =
-  | { ok: true; rows: ConfirmImportRow[] }
+  | { ok: true; rows: ConfirmImportRow[]; newCount: number }
   /** Every row is already in Prumo: nothing to import (left out). */
   | { ok: false; code: 'nothing-new'; reason: string }
   /** No row at all: the file is empty or could not be parsed (stops the loop). */
   | { ok: false; code: 'empty'; reason: string };
 
-/** The default for a statement is every new row. A file with only duplicates is up to date; one with no rows at all is an error. */
+/** The default for a statement is to import what is new. A file with only duplicates is up to date; one with no rows at all is an error. */
 export function planStatementDefaultApply(preview: Pick<ImportPreview, 'rows'>): StatementDefaultPlan {
   if (preview.rows.length === 0) return { ok: false, code: 'empty', reason: STATEMENT_EMPTY_FILE };
-  const rows = statementConfirmRows(preview);
-  if (rows.length === 0) return { ok: false, code: 'nothing-new', reason: STATEMENT_NOTHING_NEW };
-  return { ok: true, rows };
+  const newCount = statementNewCount(preview);
+  if (newCount === 0) return { ok: false, code: 'nothing-new', reason: STATEMENT_NOTHING_NEW };
+  return { ok: true, rows: statementConfirmRows(preview), newCount };
 }
 
 export const STATEMENT_NOTHING_NEW_NOTE = 'Este arquivo não tem novidades: todas as linhas já estão no Prumo.';
