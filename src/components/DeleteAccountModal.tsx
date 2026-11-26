@@ -103,7 +103,7 @@ const DeleteAccountModal = ({
               <p className="text-sm text-red-700 dark:text-red-400">
                 {deleteTransactions
                   ? (t.deleteAccountAndTransactionsWarning || 'Todas as transações vinculadas a esta conta bancária também serão apagadas permanentemente. Esta ação não pode ser desfeita.')
-                  : (t.deleteAccountTransactionsWarning || 'As transações associadas a esta conta bancária serão mantidas na sua conta do Recta e serão debitadas no cálculo de saldo da próxima conta bancária que você cadastrar. Você precisará remover esses registros manualmente caso não queira que isso afete o saldo bancário.')}
+                  : (t.deleteAccountTransactionsWarning || 'As transações associadas a esta conta bancária serão mantidas na sua conta do Prumo e serão debitadas no cálculo de saldo da próxima conta bancária que você cadastrar. Você precisará remover esses registros manualmente caso não queira que isso afete o saldo bancário.')}
               </p>
             </div>
 

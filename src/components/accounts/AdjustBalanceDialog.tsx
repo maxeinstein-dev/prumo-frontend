@@ -123,7 +123,7 @@ const AdjustBalanceDialog = ({ open, onClose, accountId, accountName, currentBal
       icon={<Scale className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3 flex-shrink-0" aria-hidden="true" />}>
       <div className="space-y-4 min-w-0">
         <p className={`text-sm ${MUTED_CLS}`}>
-          Saldo atual no Recta: <strong className="font-medium text-gray-900 dark:text-white">{money(currentCents)}</strong>
+          Saldo atual no Prumo: <strong className="font-medium text-gray-900 dark:text-white">{money(currentCents)}</strong>
         </p>
 
         <div>

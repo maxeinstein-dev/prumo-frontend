@@ -5,13 +5,13 @@
 export const CAPTURE_TEXTS_PT = {
   captureSectionTitle: 'Leitor de notificações',
   captureSectionIntro:
-    'Este aparelho lê as notificações do Nubank e do Mercado Pago e envia o texto ao Recta para você confirmar. Notificações de qualquer outro app não são lidas nem enviadas.',
+    'Este aparelho lê as notificações do Nubank e do Mercado Pago e envia o texto ao Prumo para você confirmar. Notificações de qualquer outro app não são lidas nem enviadas.',
   captureStatusOk: 'Tudo certo',
   captureStatusAttention: 'Precisa de atenção',
   captureStatusError: 'Não está capturando',
   captureRefresh: 'Atualizar',
 
-  captureLinkTitle: 'Vínculo com o Recta',
+  captureLinkTitle: 'Vínculo com o Prumo',
   captureLinked: 'Aparelho vinculado',
   captureNotLinked: 'Aparelho não vinculado',
   captureLinkButton: 'Vincular este aparelho',
@@ -32,19 +32,19 @@ export const CAPTURE_TEXTS_PT = {
   captureAccessOpen: 'Abrir acesso às notificações',
   captureAppInfoOpen: 'Abrir informações do app',
   captureAccessRestrictedHint:
-    'Se o app foi instalado por fora da loja e a tela não deixa ativar: abra as informações do app, toque nos três pontos e escolha "Permitir configurações restritas". Depois volte e ative o Recta.',
+    'Se o app foi instalado por fora da loja e a tela não deixa ativar: abra as informações do app, toque nos três pontos e escolha "Permitir configurações restritas". Depois volte e ative o Prumo.',
 
   captureBatteryTitle: 'Bateria',
   captureBatteryOk: 'Sem restrição',
   captureBatteryRestricted: 'Otimizada: o sistema pode encerrar o leitor',
   captureBatteryOpen: 'Abrir otimização de bateria',
   captureBatteryHint:
-    'Escolha "Todos os apps", encontre o Recta e marque "Não otimizar". No One UI, tire também o Recta de "Apps em suspensão".',
+    'Escolha "Todos os apps", encontre o Prumo e marque "Não otimizar". No One UI, tire também o Prumo de "Apps em suspensão".',
 
   captureNoticesTitle: 'Avisos de compra',
   captureNoticesOn: 'Ligados',
   captureNoticesOff: 'Desligados',
-  captureNoticesHint: 'Mostra "Compra de R$ X capturada: confirmar?" quando o Recta lê uma compra; o toque abre a caixa de capturas.',
+  captureNoticesHint: 'Mostra "Compra de R$ X capturada: confirmar?" quando o Prumo lê uma compra; o toque abre a caixa de capturas.',
   captureNoticesAllow: 'Permitir avisos',
 
   captureQueueTitle: 'Fila de envio',
@@ -62,7 +62,7 @@ export const CAPTURE_TEXTS_PT = {
 
   captureIssuePluginUnavailable: 'O leitor nativo não respondeu. Feche e abra o app.',
   captureIssueSecureStorage: 'O armazenamento seguro deste aparelho não está disponível; o token não pode ser guardado.',
-  captureIssueNotLinked: 'Vincule o aparelho para enviar as capturas ao Recta.',
+  captureIssueNotLinked: 'Vincule o aparelho para enviar as capturas ao Prumo.',
   captureIssueAccessOff: 'Sem o acesso às notificações nada é capturado.',
   captureIssueAuth: 'O servidor recusou o token (revogado ou sem permissão). Desvincule e vincule o aparelho de novo.',
   captureIssueBattery: 'A otimização de bateria pode encerrar o leitor com o app fechado.',
@@ -140,7 +140,7 @@ export const CAPTURE_TEXTS_PT = {
 
   captureDevicesTitle: 'Aparelhos vinculados',
   captureDevicesIntro:
-    'Aparelhos com permissão para enviar capturas ao Recta. Revogue os que você não usa mais.',
+    'Aparelhos com permissão para enviar capturas ao Prumo. Revogue os que você não usa mais.',
   captureDevicesEmpty: 'Nenhum aparelho vinculado.',
   captureDevicesLoadError: 'Não foi possível carregar os aparelhos.',
   captureDeviceStatusActive: 'Ativo',
@@ -152,7 +152,7 @@ export const CAPTURE_TEXTS_PT = {
   captureDeviceRevoking: 'Revogando…',
   captureDeviceRevokeTitle: 'Revogar aparelho?',
   captureDeviceRevokeMessage:
-    'O aparelho deixa de enviar capturas ao Recta. Se for este celular, ele precisa ser vinculado de novo.',
+    'O aparelho deixa de enviar capturas ao Prumo. Se for este celular, ele precisa ser vinculado de novo.',
   captureDeviceRevokedToast: 'Aparelho revogado.',
   captureDeviceRevokeFailed: 'Não foi possível revogar o aparelho.',
 } as const;

@@ -51,7 +51,7 @@ export interface PaginatedResponse<T> {
  *
  * 1. The mode decides, not what is stored: in local mode the stored JWT is returned directly (no expiry
  *    validation here — the backend answers 401, which ends the session, see the response interceptor).
- * 2. Otherwise the Firebase ID token is resolved as before; a forgotten `recta_token` never shadows it.
+ * 2. Otherwise the Firebase ID token is resolved as before; a forgotten `prumo_token` never shadows it.
  *
  * Assumption (parallel lane C1): `config/firebase.ts` may be refactored into
  * lazy exports, so there is NO static `import { auth }` at the top of this

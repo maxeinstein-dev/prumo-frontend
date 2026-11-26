@@ -17,8 +17,8 @@ export const MAXFIN_REALIGN_TEXTS_PT = {
   maxfinRealignInsertionMany: '{count} lançamentos descem {lines} (linhas inseridas acima)',
   maxfinRealignRemovalOne: '{count} lançamento sobe {lines} (linhas removidas acima)',
   maxfinRealignRemovalMany: '{count} lançamentos sobem {lines} (linhas removidas acima)',
-  maxfinRealignRemovedOne: '{count} lançamento removido da planilha continua no Recta e assume a linha que o bloco desocupa',
-  maxfinRealignRemovedMany: '{count} lançamentos removidos da planilha continuam no Recta e assumem as linhas que o bloco desocupa',
+  maxfinRealignRemovedOne: '{count} lançamento removido da planilha continua no Prumo e assume a linha que o bloco desocupa',
+  maxfinRealignRemovedMany: '{count} lançamentos removidos da planilha continuam no Prumo e assumem as linhas que o bloco desocupa',
   maxfinRealignInsertedOne: '{count} linha nova só entra depois deste realinhamento',
   maxfinRealignInsertedMany: '{count} linhas novas só entram depois deste realinhamento',
 

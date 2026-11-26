@@ -11,7 +11,7 @@ import {
 /**
  * Makes an open layer (a sheet, a menu, a modal) close with the Android back button, below 768 px only.
  *
- * While the layer is open it owns one history entry (`history.state.rectaLayer`). The back button pops that entry, the
+ * While the layer is open it owns one history entry (`history.state.prumoLayer`). The back button pops that entry, the
  * popstate closes the layer on top, and the layer's own entry is gone. A layer closed by code (X, backdrop, Esc, a
  * button) pops its entry with history.back(), so the history keeps no leftover. Above 768 px nothing is pushed, so the
  * desktop keeps the browser's behavior.

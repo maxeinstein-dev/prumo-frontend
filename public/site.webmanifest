@@ -1,11 +1,11 @@
 {
-  "name": "Recta - Gerenciador Financeiro",
-  "short_name": "Recta",
+  "name": "Prumo - Gerenciador Financeiro",
+  "short_name": "Prumo",
   "description": "Controle suas finanças em um só lugar. Gerencie contas, cartões, orçamentos e metas de economia.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#3b82f6",
+  "theme_color": "#2457e6",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [

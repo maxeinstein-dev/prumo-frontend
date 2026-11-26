@@ -347,7 +347,7 @@ const SettingsPage = () => {
     [currentUser, deleteUserAccount, showError, t.cancel, t.emailDoesNotMatch, t.requiresRecentLogin]
   );
 
-  const handleResetRectaAccount = useCallback(
+  const handleResetPrumoAccount = useCallback(
     async () => {
       if (!currentUser) {
         showError("Usuário não está autenticado");
@@ -499,7 +499,7 @@ const SettingsPage = () => {
         </h2>
         <p className="text-sm font-light text-gray-500 dark:text-gray-400 mb-4">
           {t.pwaInfoDescription ||
-            "Instale o Recta na tela inicial do seu celular ou computador para acesso rápido e melhor experiência!"}
+            "Instale o Prumo na tela inicial do seu celular ou computador para acesso rápido e melhor experiência!"}
         </p>
 
         {isInstalled ? (
@@ -770,23 +770,23 @@ const SettingsPage = () => {
         </div>
       </div>
 
-      {/* Resetar Conta do Recta */}
+      {/* Resetar Conta do Prumo */}
       <div className="bg-white dark:bg-gray-900 border border-orange-200 dark:border-orange-800 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
         <h2 className="text-lg sm:text-xl font-light tracking-tight text-gray-900 dark:text-white mb-4 flex items-center">
           <RefreshCcw className="h-5 w-5 mr-2 text-orange-500" />
-          {t.resetRectaAccount}
+          {t.resetPrumoAccount}
         </h2>
         <div className="space-y-4">
           <div>
             <p className="text-sm font-light text-gray-500 dark:text-gray-400 mb-4">
-              {t.resetRectaAccountDescription}
+              {t.resetPrumoAccountDescription}
             </p>
             <button
               onClick={() => setIsResetAccountModalOpen(true)}
               className="inline-flex items-center px-4 py-2.5 text-sm font-light tracking-tight text-white bg-orange-500 dark:bg-orange-500 border border-orange-500 dark:border-orange-500 rounded-md hover:opacity-80 transition-opacity"
             >
               <RefreshCcw className="h-4 w-4 mr-2" />
-              {t.resetRectaAccount}
+              {t.resetPrumoAccount}
             </button>
           </div>
         </div>
@@ -839,7 +839,7 @@ const SettingsPage = () => {
       <ResetAccountModal
         isOpen={isResetAccountModalOpen}
         onClose={() => setIsResetAccountModalOpen(false)}
-        onConfirm={handleResetRectaAccount}
+        onConfirm={handleResetPrumoAccount}
         isResetting={resetUserAccount.isPending}
       />
 

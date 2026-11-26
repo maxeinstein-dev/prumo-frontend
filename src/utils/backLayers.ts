@@ -3,12 +3,12 @@
  * the back closes, and how a layer's own history entry is added or removed. No React and no imports, so
  * tools/fe-tests/t40_back_layers.mts runs it under tsx (BACK_LAYERS_MODULE points it at a mutated copy).
  *
- * Each open layer owns one history entry, marked with `history.state.rectaLayer = id`. The back button pops that entry
+ * Each open layer owns one history entry, marked with `history.state.prumoLayer = id`. The back button pops that entry
  * (the WebView goes back), and the popstate closes the layer on top. A layer closed by code pops its own entry with
  * history.back(), so the history does not keep leftovers.
  */
 
-export const LAYER_STATE_KEY = 'rectaLayer';
+export const LAYER_STATE_KEY = 'prumoLayer';
 
 /** Início, the only screen where the back button leaves the app. */
 export const HOME_PATH = '/app';

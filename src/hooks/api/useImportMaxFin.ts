@@ -541,8 +541,8 @@ export function groupRowsBySection(preview: Pick<MaxFinPreviewResponse, 'section
 // Every access is guarded: storage may be unavailable (private mode, blocked site data).
 // Parsing and merging are pure and live in utils/maxfinPayload.ts.
 
-// A new key: the former global one (`recta.maxfin.categoryMap`) mixed households and is ignored.
-export const MAXFIN_CATEGORY_CHOICES_STORAGE_KEY = 'recta.maxfin.categoryChoices';
+// A new key: the former global one (`prumo.maxfin.categoryMap`) mixed households and is ignored.
+export const MAXFIN_CATEGORY_CHOICES_STORAGE_KEY = 'prumo.maxfin.categoryChoices';
 
 export type MaxFinSavedCategoryChoices = Record<string, MaxFinCategoryTargetInput>;
 
@@ -568,7 +568,7 @@ export function saveCategoryChoices(householdId: string | null | undefined, choi
   }
 }
 
-export const MAXFIN_ACCOUNTS_STORAGE_KEY = 'recta.maxfin.accounts';
+export const MAXFIN_ACCOUNTS_STORAGE_KEY = 'prumo.maxfin.accounts';
 
 /**
  * Last destination accounts chosen per household (`{ [householdId]: MaxFinAccountsInput }`), so importing

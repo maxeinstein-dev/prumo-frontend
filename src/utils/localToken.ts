@@ -6,7 +6,7 @@
  * `Authorization: Bearer <token>` by the api.ts interceptor.
  */
 
-export const TOKEN_KEY = 'recta_token';
+export const TOKEN_KEY = 'prumo_token';
 
 function storage(): Storage | null {
   try {

@@ -112,7 +112,7 @@ export const WhatsNewModal = ({ isOpen, onClose }: WhatsNewModalProps) => {
               id="whats-new-title"
               className="text-xl font-bold text-gray-900 dark:text-gray-100"
             >
-              {t.whatsNewTitle || 'Novidades do Recta'}
+              {t.whatsNewTitle || 'Novidades do Prumo'}
             </h2>
           </div>
           {isUnderstood && hasScrolledToEnd && (
