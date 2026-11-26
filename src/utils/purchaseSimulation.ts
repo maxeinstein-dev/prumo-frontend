@@ -1,5 +1,5 @@
 /**
- * Presentation logic of the purchase simulator (P20, lote L2). Pure: no React, so tools/fe-tests/t59_purchase_simulation.mts
+ * Presentation logic of the purchase simulator (P20, lote L2). Pure: no React, so tests/t59_purchase_simulation.mts
  * runs it under tsx (PURCHASE_SIMULATION_MODULE points it at a mutated copy).
  *
  * Every number comes from the server (POST /dashboard/purchase-simulation); nothing here recalculates the months. This file
@@ -39,6 +39,8 @@ export interface PurchaseSimulation {
   tightest: { month: string; leftover: number; leftoverWithoutPurchase: number } | null;
   budgetOverruns: SimulationBudgetOverrun[];
   averageExpense: { months: number; amount: number };
+  /** My part of the purchase, in percent (100 = not split). Older answers do not carry it. */
+  ownSharePercent?: number;
 }
 
 export interface SimulationRequestBody {
@@ -48,6 +50,7 @@ export interface SimulationRequestBody {
   accountId?: string;
   categoryName?: string;
   firstMonth?: string;
+  ownSharePercent?: number;
 }
 
 export const MAX_INSTALLMENTS = 24;
@@ -85,11 +88,13 @@ export interface SimulatorForm {
   accountId?: string;
   categoryName?: string;
   firstMonth?: string;
+  /** My part, in percent, of a purchase that will be split ("50", "33,33"); empty = not split. */
+  ownShare?: string;
 }
 
 export type SimulationRequestResult =
   | { ok: true; body: SimulationRequestBody }
-  | { ok: false; error: 'amount' | 'installments' | 'tooSmall' };
+  | { ok: false; error: 'amount' | 'installments' | 'tooSmall' | 'ownShare' };
 
 /** The request body from the form; only what was filled is sent, so the server decides the defaults. */
 export function simulationRequest(form: SimulatorForm, householdId: string): SimulationRequestResult {
@@ -102,6 +107,12 @@ export function simulationRequest(form: SimulatorForm, householdId: string): Sim
   if (form.accountId) body.accountId = form.accountId;
   if (form.categoryName) body.categoryName = form.categoryName;
   if (form.firstMonth) body.firstMonth = form.firstMonth;
+  const shareText = (form.ownShare ?? '').trim();
+  if (shareText) {
+    const percent = parseAmountText(shareText.replace(/%$/, ''));
+    if (percent === null || percent > 100) return { ok: false, error: 'ownShare' };
+    if (percent < 100) body.ownSharePercent = percent;
+  }
   return { ok: true, body };
 }
 
@@ -144,12 +155,19 @@ export interface SimulationSummary {
   overruns: string[];
   /** The average of the last months against the tightest month; null when there is no average yet. */
   average: string | null;
+  /** A split purchase: only my part counts in the figures; null when it is not split. */
+  share: string | null;
 }
 
 const abs = (n: number): number => Math.abs(n);
 
 /** The sentences about the answer. `money` formats a value in reais. */
-export function simulationSummary(sim: PurchaseSimulation, money: (value: number) => string): SimulationSummary {
+export function simulationSummary(
+  sim: PurchaseSimulation,
+  money: (value: number) => string,
+  /** The name of a category as the screens show it ('' when unknown: the internal id is never shown). */
+  categoryLabel: (categoryName: string) => string = (categoryName) => categoryName,
+): SimulationSummary {
   const t = sim.tightest;
   const tightest = t
     ? `O mês mais apertado é ${monthLabel(t.month)}: ${t.leftover < 0 ? `faltam ${money(abs(t.leftover))}` : `sobra ${money(t.leftover)}`} (sem a compra seria ${money(t.leftoverWithoutPurchase)}).`
@@ -160,7 +178,8 @@ export function simulationSummary(sim: PurchaseSimulation, money: (value: number
     : 'Nenhuma receita prevista nesses meses: a sobra mostrada é só o negativo do que já está comprometido mais a compra.';
 
   const overruns = sim.budgetOverruns.map((o) => {
-    const what = o.scope === 'GENERAL' ? 'o orçamento geral' : `o orçamento de ${o.categoryName}`;
+    const label = o.scope === 'GENERAL' ? '' : categoryLabel(o.categoryName);
+    const what = o.scope === 'GENERAL' ? 'o orçamento geral' : label && !label.startsWith('CUSTOM:') ? `o orçamento de ${label}` : 'o orçamento da categoria';
     return `${monthLabel(o.month)} estoura ${what}: ${money(o.projected)} para um limite de ${money(o.limit)} (sem a compra seria ${money(o.withoutPurchase)}).`;
   });
 
@@ -172,7 +191,11 @@ export function simulationSummary(sim: PurchaseSimulation, money: (value: number
     const relation = diff === 0 ? 'fica igual à média' : `fica ${money(abs(diff))} ${diff > 0 ? 'acima' : 'abaixo'}`;
     average = `Média de despesa dos últimos ${avg.months} meses: ${money(avg.amount)}. Com a compra, ${monthLabel(row.month)} ${relation}.`;
   }
-  return { tightest, incomeNote, overruns, average };
+  const percent = sim.ownSharePercent ?? 100;
+  const share = percent < 100
+    ? `Conta só a sua parte (${String(percent).replace('.', ',')}%) da compra: na parcela nova, na sobra e nos orçamentos que medem a sua parte.`
+    : null;
+  return { tightest, incomeNote, overruns, average, share };
 }
 
 /** The messages for a refused form. */
@@ -180,4 +203,5 @@ export const SIMULATOR_ERRORS = {
   amount: 'Informe o valor da compra.',
   installments: `Informe de 1 a ${MAX_INSTALLMENTS} parcelas.`,
   tooSmall: 'O valor é pequeno demais para essa quantidade de parcelas.',
+  ownShare: 'Informe a sua parte de 1 a 100%, com até 2 casas.',
 } as const;

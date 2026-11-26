@@ -6,7 +6,9 @@ import { usePurchaseSimulation } from '../../hooks/api/usePurchaseSimulation';
 import { useBackLayer } from '../../hooks/useBackLayer';
 import { useDefaultHousehold } from '../../hooks/useDefaultHousehold';
 import { AccountType } from '../../constants/accountTypes';
-import { TransactionType } from '../../lib/enums';
+import { getCategoryDisplayName, TransactionType, type CustomCategoryInfo } from '../../lib/enums';
+import { useCategories } from '../../hooks/api/useCategories';
+import { useI18n } from '../../context/I18nContext';
 import { formatCurrency } from '../../utils/format';
 import {
   INSTALLMENT_SHORTCUTS,
@@ -41,6 +43,7 @@ export default function PurchaseSimulator({ open, onClose, currency }: PurchaseS
   const [accountId, setAccountId] = useState('');
   const [categoryName, setCategoryName] = useState('');
   const [firstMonth, setFirstMonth] = useState('');
+  const [ownShare, setOwnShare] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
   useBackLayer(open, onClose);
@@ -62,14 +65,19 @@ export default function PurchaseSimulator({ open, onClose, currency }: PurchaseS
   const plain = (value: number): string => money(value).replace(/[^\d.,\-−]/g, '');
   const result: PurchaseSimulation | undefined = simulation.data;
   const rows = useMemo(() => (result ? simulationRows(result) : []), [result]);
-  const summary = useMemo(() => (result ? simulationSummary(result, money) : null), [result, currency]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { t } = useI18n();
+  const categoriesQuery = useCategories({ householdId: householdId ?? '' });
+  const customCategories = useMemo(() => (categoriesQuery.data ?? []).filter((c) => !c.isSystem), [categoriesQuery.data]);
+  // The overrun lines name the category as the screens do (a custom one by its name, never the internal id)
+  const categoryLabel = (name: string): string => getCategoryDisplayName(name, t as unknown as Record<string, string>, customCategories as CustomCategoryInfo[] | undefined);
+  const summary = useMemo(() => (result ? simulationSummary(result, money, categoryLabel) : null), [result, currency, customCategories]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!householdId) return;
-    const request = simulationRequest({ amount, installments, accountId, categoryName, firstMonth }, householdId);
+    const request = simulationRequest({ amount, installments, accountId, categoryName, firstMonth, ownShare }, householdId);
     if (!request.ok) {
       setFormError(SIMULATOR_ERRORS[request.error]);
       return;
@@ -137,6 +145,25 @@ export default function PurchaseSimulator({ open, onClose, currency }: PurchaseS
           </div>
 
           <div>
+            <label htmlFor="sim-own-share" className={LABEL}>Vai dividir? Sua parte em % (opcional)</label>
+            <div className="mb-2 flex flex-wrap gap-2" role="group" aria-label="Atalhos da sua parte">
+              {['50', '100'].map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  aria-pressed={(ownShare || '100') === p}
+                  onClick={() => setOwnShare(p === '100' ? '' : p)}
+                  className={`min-h-[44px] min-w-[44px] rounded-xl border px-3 text-sm font-semibold ${(ownShare || '100') === p ? 'border-rc-ink bg-rc-ink text-rc-bg' : 'border-rc-line bg-rc-card text-rc-ink'}`}
+                >
+                  {p === '100' ? 'Só eu' : 'Meio a meio'}
+                </button>
+              ))}
+            </div>
+            <input id="sim-own-share" inputMode="decimal" autoComplete="off" placeholder="100" value={ownShare} onChange={(e) => setOwnShare(e.target.value)} aria-describedby="sim-own-share-hint" className={`${FIELD} tabular-nums`} />
+            <p id="sim-own-share-hint" className="mt-1 text-xs text-rc-ink2">Se a compra for dividida, só a sua parte conta na parcela, na sobra e nos orçamentos que medem a sua parte.</p>
+          </div>
+
+          <div>
             <label htmlFor="sim-first-month" className={LABEL}>Mês da primeira parcela (opcional)</label>
             <input id="sim-first-month" type="month" value={firstMonth} onChange={(e) => setFirstMonth(e.target.value)} className={FIELD} />
           </div>
@@ -152,6 +179,7 @@ export default function PurchaseSimulator({ open, onClose, currency }: PurchaseS
         {result && summary && (
           <section className="space-y-3 border-t border-rc-line px-4 py-4" aria-label="Resultado da simulação" data-testid="sim-result">
             {summary.tightest && <p className="text-base font-semibold" data-testid="sim-tightest">{summary.tightest}</p>}
+            {summary.share && <p className="text-sm text-rc-ink2" data-testid="sim-share">{summary.share}</p>}
             {summary.average && <p className="text-sm text-rc-ink2">{summary.average}</p>}
             {summary.overruns.length > 0 && (
               <ul className="space-y-1 rounded-xl bg-rc-red-soft p-3 text-sm text-rc-red" data-testid="sim-overruns">
