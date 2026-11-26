@@ -7,6 +7,7 @@ import { METHOD_TEXT, canConfirmInOneTap, fallbackCategory, readingOf, warningTe
 import { captureText, type CaptureTextKey } from '../../utils/captureTexts';
 import { BTN_PRIMARY, BTN_SECONDARY, MUTED_CLS } from '../people/ui';
 import { duplicateNote } from '../../utils/captureTransfer';
+import { investmentOf, investmentTitle } from '../../utils/captureInvestment';
 
 /** Long texts start folded: three lines, with a button that opens the rest. */
 const FOLD_AFTER_CHARS = 140;
@@ -28,13 +29,15 @@ interface CaptureCardProps {
   onRestore: () => void;
   /** P16: a Pix between own accounts is offered as one transfer; the block replaces the usual actions. */
   transfer?: ReactNode;
+  /** P21 L7: an XP draft opens the investment dialog instead of the transaction form. */
+  onInvest?: () => void;
 }
 
 /**
  * One capture in the inbox. The primary action sits full width at the top of the actions, so it is in thumb reach on a
  * phone: one tap when the suggestion is complete, otherwise it opens the form filled with what there is.
  */
-const CaptureCard = ({ item, accountName, categoryLabel, canEdit, busy, onConfirm, onEdit, onDismiss, onRestore, transfer }: CaptureCardProps) => {
+const CaptureCard = ({ item, accountName, categoryLabel, canEdit, busy, onConfirm, onEdit, onDismiss, onRestore, transfer, onInvest }: CaptureCardProps) => {
   const { t } = useI18n();
   const tx = (key: CaptureTextKey) => captureText(t, key);
   const [expanded, setExpanded] = useState(false);
@@ -53,6 +56,7 @@ const CaptureCard = ({ item, accountName, categoryLabel, canEdit, busy, onConfir
   const method = reading.method ? METHOD_TEXT[reading.method] ?? null : null;
   const warning = warningText(reading.warning);
   const repeat = dismissed ? duplicateNote(item) : null;
+  const investment = investmentOf(item);
 
   return (
     <li className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-3">
@@ -84,7 +88,28 @@ const CaptureCard = ({ item, accountName, categoryLabel, canEdit, busy, onConfir
 
       <div className="rounded-md bg-gray-50 dark:bg-gray-800/50 p-3 min-w-0">
         <p className="mb-2 text-xs font-medium text-gray-700 dark:text-gray-200">{tx('captureSuggestionTitle')}</p>
-        {hasAnySuggestion ? (
+        {investment ? (
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm font-light">
+            <dt className={MUTED_CLS}>Investimento</dt>
+            <dd className="text-gray-900 dark:text-white break-words">{investmentTitle(investment)}</dd>
+            <dt className={MUTED_CLS}>{tx('captureFormAmount')}</dt>
+            <dd className="text-base font-medium tabular-nums text-gray-900 dark:text-white">{formatCurrency(investment.amount)}</dd>
+            {investment.movementType === 'BUY' && investment.quantity !== null && (
+              <>
+                <dt className={MUTED_CLS}>Quantidade</dt>
+                <dd className="text-gray-900 dark:text-white">{investment.quantity} (sugerida)</dd>
+              </>
+            )}
+            <dt className={MUTED_CLS}>Posição</dt>
+            <dd className="text-gray-900 dark:text-white break-words">
+              {investment.positions.length === 1
+                ? investment.positions[0]!.name
+                : investment.positions.length === 0
+                  ? <span className={MUTED_CLS}>nenhuma aberta: crie ao confirmar</span>
+                  : <span className={MUTED_CLS}>{investment.positions.length} posições: escolha ao confirmar</span>}
+            </dd>
+          </dl>
+        ) : hasAnySuggestion ? (
           <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm font-light">
             {amount && (
               <>
@@ -139,14 +164,25 @@ const CaptureCard = ({ item, accountName, categoryLabel, canEdit, busy, onConfir
           </p>
         )}
         {repeat && <p className={`mt-2 text-xs font-light ${MUTED_CLS}`}>{repeat}</p>}
-        {!dismissed && !transfer && hasAnySuggestion && !complete && (
+        {!dismissed && !transfer && !investment && hasAnySuggestion && !complete && (
           <p className={`mt-2 text-xs font-light ${MUTED_CLS}`}>{tx('captureIncompleteSuggestion')}</p>
         )}
       </div>
 
       {!dismissed && transfer}
 
-      {canEdit && !dismissed && !transfer && (
+      {canEdit && !dismissed && investment && (
+        <div className="space-y-2">
+          <button type="button" onClick={onInvest} disabled={busy !== null || !onInvest} className={`${BTN_PRIMARY} ${TOUCH} w-full`}>
+            Lançar no investimento
+          </button>
+          <button type="button" onClick={onDismiss} disabled={busy !== null} className={`${BTN_SECONDARY} ${TOUCH} w-full`}>
+            {busy === 'dismiss' ? tx('captureDismissing') : tx('captureDismiss')}
+          </button>
+        </div>
+      )}
+
+      {canEdit && !dismissed && !transfer && !investment && (
         <div className="space-y-2">
           <button
             type="button"
