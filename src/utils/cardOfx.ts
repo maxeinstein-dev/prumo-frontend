@@ -379,7 +379,7 @@ export interface CardOfxSections {
   /** `advance-payment`: a payment line that becomes a credit on the card. */
   advance: CardOfxGroupView[];
   other: CardOfxGroupView[];
-  /** Lines already in Recta and in no proposal. */
+  /** Lines already in Prumo and in no proposal. */
   reconciled: CardOfxLine[];
   /** The "Pagamento recebido" line that pays the previous invoice (`payment.ref`). */
   paymentLine: CardOfxLine | null;
@@ -700,21 +700,21 @@ export interface CardOfxTotals {
   advance: CardOfxKindTotals;
   /** Ticked groups (and their lines) that go to another person. */
   otherPeople: { groups: number; lines: number };
-  /** Lines already in Recta (payments excluded), at the OFX amounts. */
+  /** Lines already in Prumo (payments excluded), at the OFX amounts. */
   reconciled: { lines: number; cents: number };
   /** Card transactions of the month that no OFX line matched (they stay as they are). */
   sheetOnly: { count: number; cents: number };
   /** The statement as the server totals it: purchases minus refunds and discounts, payments excluded. */
   ofxCents: number;
   /**
-   * The invoice in Recta after the confirm, on the same basis (payments excluded): the lines already reconciled
+   * The invoice in Prumo after the confirm, on the same basis (payments excluded): the lines already reconciled
    * (at their OFX amounts: the stored amounts are not in the preview), every sheet row and future installment
    * a proposal points to, ticked or not (it exists either way: ticking only links and enriches it), the lines of
    * the ticked create and reversal groups (they become new transactions), and the transactions of the month that
    * no OFX line matched.
    */
-  rectaCents: number;
-  /** ofxCents − rectaCents. */
+  prumoCents: number;
+  /** ofxCents − prumoCents. */
   differenceCents: number;
   /** What confirm does to the payment of the previous invoice. */
   payment: { action: 'adjust' | 'create' | null; cents: number };
@@ -785,7 +785,7 @@ export function buildCardOfxConfirm(
   const reconciledLines = sections.reconciled.filter((line) => line.kind !== 'payment');
   const reconciledCents = sumSignedCents(reconciledLines);
   const targets = new Set<string>();
-  let rectaCents = reconciledCents;
+  let prumoCents = reconciledCents;
   for (const group of sections.groups) {
     // An advance payment (paired with a sheet credit, or recorded from the OFX): payments are outside the OFX total, so outside this one too.
     if (group.hasPayment) continue;
@@ -795,9 +795,9 @@ export function buildCardOfxConfirm(
       if (targets.has(target.transactionId)) continue;
       targets.add(target.transactionId);
       if (isGroupSelected(selection, group)) {
-        rectaCents += group.netCents;
+        prumoCents += group.netCents;
       } else {
-        rectaCents += signedCents(target.amount, target.type) + sumSignedCents(group.proposal.absorbed ?? []);
+        prumoCents += signedCents(target.amount, target.type) + sumSignedCents(group.proposal.absorbed ?? []);
       }
       continue;
     }
@@ -811,15 +811,15 @@ export function buildCardOfxConfirm(
         targets.add(target.transactionId);
         // Consuming a future writes the bank amount into it; every other target keeps the amount it has.
         const written = consumed && ticked ? group.lines.find((line) => line.type === target.type)?.amount : undefined;
-        rectaCents += signedCents(written ?? target.amount, target.type);
+        prumoCents += signedCents(written ?? target.amount, target.type);
       }
     } else if ((group.section === 'new' || group.section === 'reversal') && isGroupSelected(selection, group)) {
-      rectaCents += group.netCents;
+      prumoCents += group.netCents;
     }
   }
   const sheetOnly = sections.sheetOnly.filter((row) => !targets.has(row.transactionId));
   const sheetOnlyCents = sumSignedCents(sheetOnly);
-  rectaCents += sheetOnlyCents;
+  prumoCents += sheetOnlyCents;
   const ofxCents = toSignedCents(preview.ofxTotal);
 
   const payment = preview.payment ?? null;
@@ -864,8 +864,8 @@ export function buildCardOfxConfirm(
       reconciled: { lines: reconciledLines.length, cents: reconciledCents },
       sheetOnly: { count: sheetOnly.length, cents: sheetOnlyCents },
       ofxCents,
-      rectaCents,
-      differenceCents: ofxCents - rectaCents,
+      prumoCents,
+      differenceCents: ofxCents - prumoCents,
       payment: { action: paymentAction, cents: payment ? toCents(payment.amount) : 0 },
     },
     hasSelectable: sections.groups.some((group) => group.sendable) || isPaymentActionable(payment),

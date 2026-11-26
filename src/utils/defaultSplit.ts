@@ -103,7 +103,7 @@ export function quickSplitBody(choice: QuickSplit, person: { id: string } | null
   return { strategy: 'percent', entries: [{ personId: person.id, percent: 100 }] };
 }
 
-const LAST_PERSON_KEY = 'recta.quickSplit.lastPerson';
+const LAST_PERSON_KEY = 'prumo.quickSplit.lastPerson';
 
 interface SmallStorage {
   getItem(key: string): string | null;

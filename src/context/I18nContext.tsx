@@ -228,8 +228,8 @@ export interface Translations {
   saveAndCreateNew: string;
   cancel: string;
   resetAccount: string;
-  resetRectaAccount: string;
-  resetRectaAccountDescription: string;
+  resetPrumoAccount: string;
+  resetPrumoAccountDescription: string;
   resetAccountConfirmationPhrase: string;
   resetAccountWarning: string;
   resetAccountWarningMessage: string;

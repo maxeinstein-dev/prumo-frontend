@@ -326,7 +326,7 @@ const CategoryMapTable = ({ entries, choices, customCategories, disabled, onChan
               <th className={TH_CLS}>Chave na planilha</th>
               <th className={TH_CLS}>Tipo</th>
               <th className={`${TH_CLS} text-right`}>Linhas</th>
-              <th className={TH_CLS}>Destino no Recta</th>
+              <th className={TH_CLS}>Destino no Prumo</th>
             </tr>
           </thead>
           <tbody className={TBODY_CLS}>

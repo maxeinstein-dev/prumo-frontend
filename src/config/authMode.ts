@@ -2,7 +2,7 @@ import { parseAuthConfig, type AuthMode } from '../utils/localSession';
 
 export type { AuthMode };
 
-const STORAGE_KEY = 'recta_auth_mode';
+const STORAGE_KEY = 'prumo_auth_mode';
 
 let cachedMode: AuthMode | null = null;
 // Whether the backend accepts new local sign-ups (AUTH_ALLOW_REGISTRATION). True until a backend says otherwise.

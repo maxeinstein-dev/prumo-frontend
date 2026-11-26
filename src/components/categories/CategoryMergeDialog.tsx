@@ -125,7 +125,7 @@ const CategoryMergeDialog = ({ open, onClose, source, categories }: CategoryMerg
                 <optgroup label="Suas categorias">
                   {targets.filter((o) => o.kind === 'custom').map((o) => <option key={targetKey(o)} value={targetKey(o)}>{o.label}</option>)}
                 </optgroup>
-                <optgroup label="Padrão do Recta">
+                <optgroup label="Padrão do Prumo">
                   {targets.filter((o) => o.kind === 'system').map((o) => <option key={targetKey(o)} value={targetKey(o)}>{o.label}</option>)}
                 </optgroup>
               </select>

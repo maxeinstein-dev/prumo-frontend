@@ -110,7 +110,7 @@ const MobileShell = ({
   const activeTab = tabForPath(pathname);
   const activeMore = moreItemForPath(pathname);
   const showMonth = usesMonthSelector(screen);
-  const title = headerTitleFor(pathname) ?? (screen ? screenLabel(t, screen) : 'Recta');
+  const title = headerTitleFor(pathname) ?? (screen ? screenLabel(t, screen) : 'Prumo');
   const dict = t as unknown as Dict;
   // The Android back button closes the "Mais" sheet before it leaves the screen (see utils/backLayers.ts).
   useBackLayer(moreOpen, () => setMoreOpen(false));

@@ -75,7 +75,7 @@ const CategoryManager = ({ householdId, canEdit }: CategoryManagerProps) => {
         )}
       </div>
       <p className={`text-sm font-light mb-4 ${MUTED_CLS}`}>
-        As categorias padrão do Recta não mudam. As suas podem ser renomeadas, coloridas e unidas: por exemplo, unir
+        As categorias padrão do Prumo não mudam. As suas podem ser renomeadas, coloridas e unidas: por exemplo, unir
         "Investimento" com "Investimentos" leva todos os lançamentos para uma só.
       </p>
 

@@ -177,7 +177,7 @@ export async function applyDefaultsToRemaining(
 
 /**
  * loading: the preview request is in flight. confirming: a confirm is. ready: the preview is on screen and there is
- * something to review. reconciled: the preview is on screen and there is nothing to apply (already in Recta).
+ * something to review. reconciled: the preview is on screen and there is nothing to apply (already in Prumo).
  * idle: no preview (it failed, or has not started).
  */
 export type CurrentPhase = 'loading' | 'confirming' | 'ready' | 'reconciled' | 'idle';
