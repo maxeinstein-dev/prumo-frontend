@@ -21,7 +21,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # 22: the jsdom of the dialog simulation (tests/dialog-sim) needs it.
+          node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -36,3 +37,10 @@ jobs:
 
       - name: Checar tipos sem subir o número de erros
         run: node scripts/tsc-ceiling.mjs
+
+      # Dentro do job build, que a proteção da main já exige: um teste quebrado barra o merge.
+      - name: Testes de lógica
+        run: npm test
+
+      - name: Simulação dos diálogos
+        run: npm run test:sim
