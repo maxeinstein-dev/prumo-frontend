@@ -12,6 +12,7 @@ import { formatCurrency } from '../utils/format';
 import { amountChanged, followLastHint, recurrenceUpdatedMessage } from '../utils/recurringFollow';
 import { competenceToSend, defaultReferenceMonth, isMonthKey, offsetToSend } from '../utils/referenceMonth';
 import { categoryMustBeCleared, initialFormType, refundToSend, shouldAutoAdjustType } from '../utils/refund';
+import { transferCategoryToSend } from '../utils/investmentContribution';
 import { Transaction, RecurringTransaction } from '../types';
 import { discountFields, emptyDraft as emptyDiscountDraft, validateDraft as validateDiscount, type EarlyDiscountDraft } from '../utils/earlyDiscount';
 import { earlyDiscountText } from '../utils/earlyDiscountTexts';
@@ -622,6 +623,8 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
           amount: data.amount,
           description: transferDescription,
           date: data.date,
+          // An aporte (into an investment account) goes with its category: it counts as invested (P24)
+          categoryName: transferCategoryToSend(fromAccount, toAccount, data.category),
         });
         success(t.transferCreated);
         if (!shouldCreateNew) {
@@ -905,6 +908,7 @@ const TransactionModal = ({ transaction, onClose, defaultAccountId, defaultPaid,
                 errors={errors}
                 accounts={accounts}
                 disabled={readOnly}
+                householdId={householdId ?? undefined}
               />
             )}
 

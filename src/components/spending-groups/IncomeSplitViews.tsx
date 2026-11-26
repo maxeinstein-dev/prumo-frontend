@@ -1,4 +1,4 @@
-import { housingCard, incomeBar, incomeBasisText, incomeLegend, type CentsFormatter, type IncomeSplit } from '../../utils/incomeSplit';
+import { housingCard, incomeBar, incomeBasisText, incomeLegend, investedLine, type CentsFormatter, type IncomeSplit } from '../../utils/incomeSplit';
 
 /**
  * The income bar with its legend (P05): one segment per spending group plus the leftover, drawn from the values the
@@ -7,6 +7,7 @@ import { housingCard, incomeBar, incomeBasisText, incomeLegend, type CentsFormat
 export function IncomeSplitBar({ split, money }: { split: IncomeSplit; money: CentsFormatter }) {
   const bar = incomeBar(split);
   const legend = incomeLegend(split, money);
+  const invested = investedLine(split, money);
   const described = bar.segments.map((s) => `${s.label} ${money(s.cents)}`).join(', ');
   return (
     <div data-testid="income-split">
@@ -43,6 +44,12 @@ export function IncomeSplitBar({ split, money }: { split: IncomeSplit; money: Ce
           </li>
         ))}
       </ul>
+      {invested && (
+        <p className="mt-3 border-t border-rc-line pt-2 text-xs text-rc-ink2" data-testid="income-split-invested">
+          <span className="font-medium text-rc-ink">Investido no mês: {invested.amount}</span> ({invested.share} da renda), já
+          dentro dos grupos acima.
+        </p>
+      )}
     </div>
   );
 }

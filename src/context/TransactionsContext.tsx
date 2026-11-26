@@ -953,6 +953,7 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
     description?: string;
     date: Date;
     notes?: string;
+    categoryName?: string;
   }): Promise<void> => {
     if (!currentUser) return;
 
@@ -971,6 +972,8 @@ export const TransactionsProvider = ({ children }: TransactionsProviderProps) =>
       description: data.description,
       date: formatDateForAPI(data.date),
       notes: data.notes,
+      // An aporte counts in the budget of its category (P24)
+      ...(data.categoryName && { categoryName: data.categoryName }),
     });
 
     analyticsHelpers.logAccountTransferCreated(fromAccountType, toAccountType, data.amount);
