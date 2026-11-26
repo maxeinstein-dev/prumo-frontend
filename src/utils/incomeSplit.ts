@@ -28,6 +28,8 @@ export interface IncomeSplit {
   totalSpent: number;
   leftover: { amount: number; percentOfIncome: number | null };
   housing: { amount: number; percentOfIncome: number | null; reference: number; housingGroups: number };
+  /** The aportes of the month (P24): already inside the groups, shown apart. Absent from an older server. */
+  invested?: { amount: number; percentOfIncome: number | null };
 }
 
 export interface GroupCategory {
@@ -159,6 +161,13 @@ export function incomeLegend(split: IncomeSplit, format: CentsFormatter): Legend
     committed: null,
   });
   return items;
+}
+
+/** "Investido" (P24): the aportes of the month and their share of the income; null when nothing was invested. */
+export function investedLine(split: IncomeSplit, format: CentsFormatter): { amount: string; share: string } | null {
+  const cents = toCents(split.invested?.amount);
+  if (cents <= 0) return null;
+  return { amount: format(cents), share: shareLabel(split.invested?.percentOfIncome) };
 }
 
 /** Which income the bar measures: always the expected one. */

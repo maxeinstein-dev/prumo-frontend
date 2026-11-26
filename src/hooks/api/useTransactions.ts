@@ -823,12 +823,16 @@ export function useCreateTransfer() {
       description?: string;
       date: string;
       notes?: string;
+      /** Only an aporte (into an investment account) is sent with one: it counts in that budget (P24). */
+      categoryName?: string;
     }) => {
       const response = await apiClient.post<Transaction>('/transactions/transfers', data);
       return response.data!;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      // An aporte counts in the budgets (P24)
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['transactions', 'summary'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] }); // Invalidate all dashboard data
       queryClient.invalidateQueries({ queryKey: ['accounts'] });

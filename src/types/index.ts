@@ -230,6 +230,8 @@ export interface TransactionsContextType {
     description?: string;
     date: Date;
     notes?: string;
+    /** Only an aporte (into an investment account) carries one (P24). */
+    categoryName?: string;
   }) => Promise<void>;
   exportToCSV: () => void;
   processRecurringTransactions: () => Promise<void>;
