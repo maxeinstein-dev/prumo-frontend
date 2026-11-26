@@ -1,4 +1,4 @@
-package dev.maxsueleinstein.recta.capture
+package dev.maxsueleinstein.prumo.capture
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals

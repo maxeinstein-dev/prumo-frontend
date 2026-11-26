@@ -1,4 +1,4 @@
-package dev.maxsueleinstein.recta.capture
+package dev.maxsueleinstein.prumo.capture
 
 import android.content.Context
 import java.io.IOException

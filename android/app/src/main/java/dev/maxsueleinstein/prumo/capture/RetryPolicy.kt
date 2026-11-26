@@ -1,4 +1,4 @@
-package dev.maxsueleinstein.recta.capture
+package dev.maxsueleinstein.prumo.capture
 
 /** What an answer from POST /captures means for the batch that was sent. */
 enum class Outcome {

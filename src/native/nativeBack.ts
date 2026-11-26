@@ -4,7 +4,7 @@ import { useToastContext } from '../context/ToastContext';
 import { EXIT_CONFIRM_MS, HOME_PATH, backAction, type BackAction } from '../utils/backLayers';
 
 /**
- * The page's side of the Android back button. MainActivity asks `window.__rectaNativeBack()` (through the bridge's
+ * The page's side of the Android back button. MainActivity asks `window.__prumoNativeBack()` (through the bridge's
  * eval) what to do: the page closes its layer, goes back in its own history, goes to Início, or, on Início, shows
  * "toque de novo para sair" and answers 'exit' only to a second back within EXIT_CONFIRM_MS. The rules are in
  * utils/backLayers.ts (backAction). The WebView's canGoBack() is not consulted.
@@ -13,7 +13,7 @@ import { EXIT_CONFIRM_MS, HOME_PATH, backAction, type BackAction } from '../util
 export const EXIT_CONFIRM_TEXT = 'Toque em voltar de novo para sair';
 
 type NativeBackWindow = Window & {
-  __rectaNativeBack?: () => BackAction;
+  __prumoNativeBack?: () => BackAction;
 };
 
 // Set by useNativeBackBridge() inside the router and the toasts; until then these fall back to plain browser calls.
@@ -24,7 +24,7 @@ let lastExitPromptAt: number | null = null;
 /** Installs the function MainActivity calls. `openLayers` returns the layers open now (see hooks/useBackLayer.ts). */
 export function installNativeBack(openLayers: () => readonly string[]): void {
   if (typeof window === 'undefined') return;
-  (window as NativeBackWindow).__rectaNativeBack = () => {
+  (window as NativeBackWindow).__prumoNativeBack = () => {
     const index = (window.history.state as { idx?: unknown } | null)?.idx;
     const now = Date.now();
     const action = backAction(

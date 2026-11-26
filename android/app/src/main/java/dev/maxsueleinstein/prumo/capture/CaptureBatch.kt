@@ -1,4 +1,4 @@
-package dev.maxsueleinstein.recta.capture
+package dev.maxsueleinstein.prumo.capture
 
 import java.net.URI
 import java.time.Instant

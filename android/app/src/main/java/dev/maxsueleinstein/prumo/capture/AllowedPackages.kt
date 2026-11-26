@@ -1,4 +1,4 @@
-package dev.maxsueleinstein.recta.capture
+package dev.maxsueleinstein.prumo.capture
 
 /**
  * The only apps whose notifications are ever read. A notification from any other package is dropped on the phone, before
