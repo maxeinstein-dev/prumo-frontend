@@ -230,7 +230,7 @@ export function registerHubScenarios({ B, w, fake, scenario, flush, all, btn, bo
 
   hubScenario('H7 a monthly sheet asks for the four accounts (remembered choices first) and starts its preview with them', async () => {
     await mountHub();
-    w.localStorage.setItem('recta.maxfin.accounts', JSON.stringify({ h1: { income: 'acc-savings', bills: 'acc-main', credit: 'acc-card2', debit: 'acc-main' } }));
+    w.localStorage.setItem('prumo.maxfin.accounts', JSON.stringify({ h1: { income: 'acc-savings', bills: 'acc-main', credit: 'acc-card2', debit: 'acc-main' } }));
     await pickFiles([file('OUT.csv', SHEET_CSV)]);
     assert.equal(sel('import-hub-account-income').value, 'acc-savings');
     assert.equal(sel('import-hub-account-credit').value, 'acc-card2');
@@ -380,7 +380,7 @@ export function registerHubScenarios({ B, w, fake, scenario, flush, all, btn, bo
   function cardPreviewFor(accountId, n, plan = {}) {
     if (plan.empty) return { ...emptyCardPreview(accountId, n), warnings: plan.warnings ?? [] };
     if (plan.reconciled) {
-      // An invoice imported before: every line is already in Recta, no proposal, no payment to apply.
+      // An invoice imported before: every line is already in Prumo, no proposal, no payment to apply.
       const done = [30, 45, 12.5].map((amount, k) => ({
         ref: `ofx:R${n}${k}:0000000${k}`, fitid: `R${n}${k}`, date: '2026-09-10', amount, type: 'EXPENSE', kind: 'purchase', memo: `Compra ${n}.${k}`,
         merchant: `Compra ${n}.${k}`, installment: null, status: 'reconciled', group: null,
@@ -788,7 +788,7 @@ export function registerHubScenarios({ B, w, fake, scenario, flush, all, btn, bo
 
   hubScenario('Q10 the closing day notice: shown for a card with none (file step and preview), not for one that has it, never blocking', async () => {
     const noDay = ACCOUNTS.map((a) => (a.id === 'acc-card' ? { ...a, closingDay: undefined } : a));
-    const SERVER_WARNING = 'O cartão "Nubank" não tem dia de fechamento configurado: no Recta as faturas seguem o mês calendário, e a data real de uma compra pode levá-la para outra fatura.';
+    const SERVER_WARNING = 'O cartão "Nubank" não tem dia de fechamento configurado: no Prumo as faturas seguem o mês calendário, e a data real de uma compra pode levá-la para outra fatura.';
     const OTHER_WARNING = 'O saldo da fatura no OFX (R$ 100,00) difere do total das linhas (R$ 195,90).';
     const mountSingle = (accounts, initialFile) => mountWith(
       (onClose) => B.createElement(B.CardDialog, { open: true, onClose, accountId: 'acc-card', householdId: 'h1', initialFile }),
@@ -1435,9 +1435,9 @@ export function registerHubScenarios({ B, w, fake, scenario, flush, all, btn, bo
 
   // ---- statements ---------------------------------------------------------------------------------------
 
-  hubScenario('QN20 a statement whose rows are all in Recta: note, "Continuar para o próximo" ("Sem novidades"), apply-to-rest from it', async () => {
+  hubScenario('QN20 a statement whose rows are all in Prumo: note, "Continuar para o próximo" ("Sem novidades"), apply-to-rest from it', async () => {
     const { log } = await mountStatements(3, { 'extrato-1.ofx': { rows: [true, true] } });
-    assert.equal(queueNote(), 'Este arquivo não tem novidades: todas as linhas já estão no Recta.');
+    assert.equal(queueNote(), 'Este arquivo não tem novidades: todas as linhas já estão no Prumo.');
     assert.equal(progressRows()[0], 'extrato-1.ofx|Sem novidades');
     assert.equal(spinning(), false);
     assert.ok(continueNextBtn() && !continueNextBtn().disabled);

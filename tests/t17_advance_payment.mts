@@ -182,7 +182,7 @@ check('AP4: selectedGroups carries the ticked advance payments; categoryMap and 
   const off = build({ ...defaultsSel, 'g-a1': false, 'g-a3': false });
   assert.ok(!off.payload.selectedGroups.includes('g-a1') && !off.payload.selectedGroups.includes('g-a3'));
   assert.equal(off.totals.advance.groups, 0);
-  assert.equal(b.totals.rectaCents, off.totals.rectaCents, 'payments are outside the invoice total: ticking one does not move it');
+  assert.equal(b.totals.prumoCents, off.totals.prumoCents, 'payments are outside the invoice total: ticking one does not move it');
   const on2 = build({ ...defaultsSel, 'g-a2': true });
   assert.ok(on2.payload.selectedGroups.includes('g-a2'));
   assert.equal(on2.totals.advance.groups, 3);

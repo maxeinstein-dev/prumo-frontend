@@ -272,17 +272,17 @@ check('kind totals of the ticked groups; created carries its future installments
   assert.deepEqual(t.payment, { action: 'adjust', cents: 90000 });
 });
 
-check('OFX total vs Recta after the confirm: targets ticked or not, ticked creates, the sheet-only rows; payments out', () => {
+check('OFX total vs Prumo after the confirm: targets ticked or not, ticked creates, the sheet-only rows; payments out', () => {
   const t = built.totals;
   assert.equal(t.ofxCents, 91906);
   // 60.00 reconciled + targets 25.90 + 187.66 + 200.00 + 50.00 (ambiguous) + 50.00 (future) + creates 345.50 + sheet-only 39.90
-  assert.equal(t.rectaCents, 6000 + 2590 + 18766 + 20000 + 5000 + 5000 + 34550 + 3990);
+  assert.equal(t.prumoCents, 6000 + 2590 + 18766 + 20000 + 5000 + 5000 + 34550 + 3990);
   assert.equal(t.differenceCents, -3990, 'the sheet row that is not on the invoice');
-  assert.equal(build({ ...defaults, 'g-exact': false, 'g-plan': false }).totals.rectaCents, t.rectaCents, 'unticking an enrich keeps the sheet row');
-  assert.equal(build({ ...defaults, 'g-eletro': false }).totals.rectaCents, t.rectaCents - 30000, 'an unticked create is not recorded');
-  assert.equal(build({ ...defaults, 'g-rev': true }).totals.rectaCents, t.rectaCents, 'a purchase + refund pair nets zero');
+  assert.equal(build({ ...defaults, 'g-exact': false, 'g-plan': false }).totals.prumoCents, t.prumoCents, 'unticking an enrich keeps the sheet row');
+  assert.equal(build({ ...defaults, 'g-eletro': false }).totals.prumoCents, t.prumoCents - 30000, 'an unticked create is not recorded');
+  assert.equal(build({ ...defaults, 'g-rev': true }).totals.prumoCents, t.prumoCents, 'a purchase + refund pair nets zero');
   const doubled = mkPreview({ sheetOnly: [...preview.sheetOnly, { ...target('t-padaria', 'Padaria', 25.9), sourceRef: null }] });
-  assert.equal(build(defaults, payAdjust, doubled).totals.rectaCents, t.rectaCents, 'a target listed as sheet-only is counted once');
+  assert.equal(build(defaults, payAdjust, doubled).totals.prumoCents, t.prumoCents, 'a target listed as sheet-only is counted once');
 });
 
 check('integer cents: 1.15 + 3.20 of credits against 4.35 of purchase nets exactly zero', () => {
@@ -293,7 +293,7 @@ check('integer cents: 1.15 + 3.20 of credits against 4.35 of purchase nets exact
   const b = C.buildCardOfxConfirm(p, { 'g-cent': true }, {}, C.defaultPaymentChoice(null), CTX);
   assert.notEqual(4.35 * 100 - 1.15 * 100 - 3.2 * 100, 0, 'the float difference would not be zero');
   assert.equal(b.totals.reversal.cents, 0);
-  assert.equal(b.totals.rectaCents, 0);
+  assert.equal(b.totals.prumoCents, 0);
   assert.equal(b.totals.differenceCents, 0);
 });
 
@@ -443,13 +443,13 @@ check('RV2 a ticked consume-future counts the OFX amount the server writes; unti
   });
   const p = bare({ lines: [l], proposals: [prop], ofxTotal: 50.01 });
   const ticked = C.buildCardOfxConfirm(p, { g: true }, {}, C.defaultPaymentChoice(null), CTX);
-  assert.equal(ticked.totals.rectaCents, 5001);
+  assert.equal(ticked.totals.prumoCents, 5001);
   assert.equal(ticked.totals.differenceCents, 0);
   const unticked = C.buildCardOfxConfirm(p, { g: false }, {}, C.defaultPaymentChoice(null), CTX);
-  assert.equal(unticked.totals.rectaCents, 5000, 'left alone it keeps 50.00');
+  assert.equal(unticked.totals.prumoCents, 5000, 'left alone it keeps 50.00');
   // an enrich keeps the sheet amount (the server only changes date and description)
   const sheet = bareProposal('e', 'enrich-exact', ['beta'], { target: { transactionId: 's', description: 'Beta', amount: 50, type: 'EXPENSE', date: '2026-09-09', sourceRef: null } });
-  assert.equal(C.buildCardOfxConfirm(bare({ lines: [l], proposals: [sheet], ofxTotal: 50.01 }), { e: true }, {}, C.defaultPaymentChoice(null), CTX).totals.rectaCents, 5000);
+  assert.equal(C.buildCardOfxConfirm(bare({ lines: [l], proposals: [sheet], ofxTotal: 50.01 }), { e: true }, {}, C.defaultPaymentChoice(null), CTX).totals.prumoCents, 5000);
 });
 
 check('RV3 an unticked consume-future dated outside the invoice period does not count in this month; a ticked one does', () => {
@@ -458,7 +458,7 @@ check('RV3 an unticked consume-future dated outside the invoice period does not 
     target: { transactionId: 'f', description: 'Beta 3/6', amount: 50, type: 'EXPENSE', date, sourceRef: 'maxfin:x:f1' },
   });
   const cents = (date: string, tick: boolean) =>
-    C.buildCardOfxConfirm(bare({ lines: [l], proposals: [future(date)], ofxTotal: 50 }), { g: tick }, {}, C.defaultPaymentChoice(null), CTX).totals.rectaCents;
+    C.buildCardOfxConfirm(bare({ lines: [l], proposals: [future(date)], ofxTotal: 50 }), { g: tick }, {}, C.defaultPaymentChoice(null), CTX).totals.prumoCents;
   assert.equal(cents('2026-11-02', false), 0, 'after the period: another invoice');
   assert.equal(cents('2026-08-30', false), 0, 'before the period');
   assert.equal(cents('2026-10-02', false), 5000, 'the closing day is inside');
@@ -539,14 +539,14 @@ console.log('\n[K10] recurrence pairing (enrich-recurrence)');
     assert.deepEqual(t.created, { groups: 0, lines: 0, cents: 0, futureInstallments: 0 });
     assert.deepEqual(t.consumed, { groups: 0, lines: 0, cents: 0 });
     // Ticked: the row holds the bank amount (47.90) and the unticked ambiguous one keeps its 30.00.
-    assert.equal(t.rectaCents, 4790 + 3000);
+    assert.equal(t.prumoCents, 4790 + 3000);
     const off = rBuild({ ...rDefaults, 'g-rec': false }).totals;
     assert.deepEqual(off.enriched, { groups: 0, lines: 0, cents: 0 });
-    assert.equal(off.rectaCents, 5000 + 3000, 'unticked: the occurrence stays at its forecast amount');
+    assert.equal(off.prumoCents, 5000 + 3000, 'unticked: the occurrence stays at its forecast amount');
     const both = rBuild({ 'g-rec': true, 'g-rec-amb': true }).totals;
     assert.deepEqual(both.enriched, { groups: 2, lines: 2, cents: 4790 + 3225 });
-    assert.equal(both.rectaCents, 4790 + 3225);
-    assert.equal(both.differenceCents, both.ofxCents - both.rectaCents);
+    assert.equal(both.prumoCents, 4790 + 3225);
+    assert.equal(both.differenceCents, both.ofxCents - both.prumoCents);
   });
 
   check('before and after: integer cents (no float drift), the difference signed, equal amounts say so', () => {

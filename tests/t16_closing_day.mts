@@ -116,6 +116,6 @@ check('CN-b: derivedClosingNotice names the computed day only when it is derived
 });
 
 check('CN-c: the server warning for a card with neither day is still recognised (old and new wording)', () => {
-  assert.equal(CQ.isClosingDayServerWarning('O cartão "X" não tem dia de fechamento nem de vencimento configurado: no Recta as faturas seguem o mês calendário'), true);
-  assert.equal(CQ.isClosingDayServerWarning('O cartão "X" não tem dia de fechamento configurado: no Recta as faturas'), true);
+  assert.equal(CQ.isClosingDayServerWarning('O cartão "X" não tem dia de fechamento nem de vencimento configurado: no Prumo as faturas seguem o mês calendário'), true);
+  assert.equal(CQ.isClosingDayServerWarning('O cartão "X" não tem dia de fechamento configurado: no Prumo as faturas'), true);
 });

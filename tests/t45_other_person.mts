@@ -95,7 +95,7 @@ check('OP5: an empty person id means "mine" and is not sent', () => {
 check('OP6: the statement totals do not move when a line is assigned (the transaction is still the whole line)', () => {
   const plain = build(all);
   const shared = build(all, { 'g-loja': 'p-bia' });
-  assert.equal(shared.totals.rectaCents, plain.totals.rectaCents);
+  assert.equal(shared.totals.prumoCents, plain.totals.prumoCents);
   assert.equal(shared.totals.differenceCents, plain.totals.differenceCents);
 });
 

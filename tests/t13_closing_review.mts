@@ -208,8 +208,8 @@ check('GA3: the merge goes in selectedGroups only when ticked; the confirm echoe
 check('GA4: the client estimate counts a ticked merge once at the bank amount, an unticked one as its rows', () => {
   const ctx = { accounts: [], customIdsByType: { INCOME: new Set<string>(), EXPENSE: new Set<string>() } };
   const only = { ...preview, proposals: [pM1], lines: [shopee], sheetOnly: [] };
-  const tick = C.buildCardOfxConfirm(only, { 'g-m1': true }, {}, C.defaultPaymentChoice(null), ctx).totals.rectaCents;
-  const untick = C.buildCardOfxConfirm(only, { 'g-m1': false }, {}, C.defaultPaymentChoice(null), ctx).totals.rectaCents;
+  const tick = C.buildCardOfxConfirm(only, { 'g-m1': true }, {}, C.defaultPaymentChoice(null), ctx).totals.prumoCents;
+  const untick = C.buildCardOfxConfirm(only, { 'g-m1': false }, {}, C.defaultPaymentChoice(null), ctx).totals.prumoCents;
   assert.equal(tick, 9130);
   assert.equal(untick, 3686 + 5444, 'the row and the absorbed one both stay');
 });
@@ -735,6 +735,6 @@ check('R4-7: the client estimate writes the bank amount into a ticked near-amoun
   const { nearP, lines2 } = mk2();
   const ctx = { accounts: [], customIdsByType: { INCOME: new Set<string>(), EXPENSE: new Set<string>() } };
   const only = { ...preview, proposals: [nearP], lines: [lines2[0]], sheetOnly: [] };
-  assert.equal(C.buildCardOfxConfirm(only, { 'g-near': true }, {}, C.defaultPaymentChoice(null), ctx).totals.rectaCents, 1003);
-  assert.equal(C.buildCardOfxConfirm(only, { 'g-near': false }, {}, C.defaultPaymentChoice(null), ctx).totals.rectaCents, 1000);
+  assert.equal(C.buildCardOfxConfirm(only, { 'g-near': true }, {}, C.defaultPaymentChoice(null), ctx).totals.prumoCents, 1003);
+  assert.equal(C.buildCardOfxConfirm(only, { 'g-near': false }, {}, C.defaultPaymentChoice(null), ctx).totals.prumoCents, 1000);
 });

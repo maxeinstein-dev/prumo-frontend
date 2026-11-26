@@ -470,7 +470,7 @@ export function registerPeopleScenarios({ B, w, fake, scenario, flush, all, btn,
 
   const mountSettle = (server, { person = ANA, balance = 25.4 } = {}, remembered = null) =>
     mountWith(server, (cb) => B.createElement(B.SettlementDialog, { open: true, onClose: cb.onClose, householdId: 'h1', person, balance }),
-      { storage: remembered ? { 'recta.people.settlementAccount': JSON.stringify(remembered) } : {} });
+      { storage: remembered ? { 'prumo.people.settlementAccount': JSON.stringify(remembered) } : {} });
   const settleBtn = () => btn(/^(Registrar acerto|Registrando…)$/);
   const settlePosts = () => calls('POST', /\/settlements$/);
   const mode = (value) => all('input[type=radio]').find((r) => r.value === value);
@@ -510,7 +510,7 @@ export function registerPeopleScenarios({ B, w, fake, scenario, flush, all, btn,
     const created = server.state.transactions.find((t) => t.id.startsWith('tx-settle-'));
     assert.equal(created.type, 'INCOME');
     assert.equal(created.accountId, 'acc-sav');
-    assert.deepEqual(JSON.parse(w.localStorage.getItem('recta.people.settlementAccount')), { h1: 'acc-sav' });
+    assert.deepEqual(JSON.parse(w.localStorage.getItem('prumo.people.settlementAccount')), { h1: 'acc-sav' });
     assert.match(toasts().at(-1)[1], /Acerto registrado\. A receita foi lançada na conta\./);
     assert.equal(current.counters.closed, 1);
     assert.equal(server.balanceOf('p-ana').balance, -25.4, 'the fake balance moved (the ledger the page shows next)');
@@ -580,7 +580,7 @@ export function registerPeopleScenarios({ B, w, fake, scenario, flush, all, btn,
     await click(settleBtn());
     await flush(20);
     assert.deepEqual(settlePosts()[0].payload, { householdId: 'h1', direction: 'RECEIVED', amount: 25.4, date: todayIso(), note: 'pix de outubro' });
-    assert.equal(w.localStorage.getItem('recta.people.settlementAccount'), null, 'no account used: none remembered');
+    assert.equal(w.localStorage.getItem('prumo.people.settlementAccount'), null, 'no account used: none remembered');
   });
 
   ps('P-S7 validation: amount > 0, a valid date, an account in create mode; the button follows', async () => {

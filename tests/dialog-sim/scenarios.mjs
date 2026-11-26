@@ -9,7 +9,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const variant = process.argv[2] ?? 'real';
 const filter = process.argv[3] ? new RegExp(process.argv[3], 'i') : null;
 
-// jsdom is not a dependency of Recta: JSDOM_FROM points at any package.json whose node_modules has it.
+// jsdom is not a dependency of Prumo: JSDOM_FROM points at any package.json whose node_modules has it.
 const req = createRequire(process.env.JSDOM_FROM || new URL('../../package.json', import.meta.url));
 const { JSDOM } = req('jsdom');
 const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost/', pretendToBeVisual: true });
@@ -347,8 +347,8 @@ scenario('C4 armed + failed confirm: not armed afterwards and blocked until refr
 });
 
 // R2-3 / (e) storage ------------------------------------------------------------------------------------------------
-const KEY = 'recta.maxfin.categoryChoices';
-const OLD_KEY = 'recta.maxfin.categoryMap';
+const KEY = 'prumo.maxfin.categoryChoices';
+const OLD_KEY = 'prumo.maxfin.categoryMap';
 async function pickCategory(i = 1) {
   const sel = categorySelect();
   const v = [...sel.options][i].value;
@@ -405,7 +405,7 @@ scenario('R2-3d accounts and category choices use the same household key; corrup
   await mount();
   await toPreview(() => makePreview({ rows: [mkRow()] }));
   await pickCategory(1);
-  const acc = JSON.parse(w.localStorage.getItem('recta.maxfin.accounts'));
+  const acc = JSON.parse(w.localStorage.getItem('prumo.maxfin.accounts'));
   const cat = JSON.parse(w.localStorage.getItem(KEY));
   assert.deepEqual(Object.keys(acc), ['h1']);
   assert.deepEqual(Object.keys(cat), ['h1']);
@@ -1061,7 +1061,7 @@ scenario('RV4 workbook: the household saved category choice reaches every month;
     const entry = c.payload.categoryMap.find((e) => e.key === 'Mercado');
     assert.deepEqual(entry?.target, { kind: 'system', categoryName: 'ENTERTAINMENT' }, `month ${c.payload.month.month}`);
   }
-  const acc = JSON.parse(w.localStorage.getItem('recta.maxfin.accounts') ?? 'null');
+  const acc = JSON.parse(w.localStorage.getItem('prumo.maxfin.accounts') ?? 'null');
   assert.deepEqual(acc && Object.keys(acc), ['h1']);
   await unmount();
 });
@@ -1323,7 +1323,7 @@ scenario('RL7 a removal block shows the removed rows that stay in the ledger; th
   await toPreview(realignPreview([rlShifted(5), rlShifted(6)], [removal]));
   const t = bodyText();
   assert.match(t, /2 lançamentos sobem 1 linha \(linhas removidas acima\)/);
-  assert.match(t, /1 lançamento removido da planilha continua no Recta e assume a linha que o bloco desocupa/);
+  assert.match(t, /1 lançamento removido da planilha continua no Prumo e assume a linha que o bloco desocupa/);
   assert.match(t, /Linha 6 → 5: Compra 1 · R\$ 10\.00/);
   assert.match(t, /Linha 5 → 7: Compra apagada · R\$ 33\.00/);
   await unmount();

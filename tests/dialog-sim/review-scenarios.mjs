@@ -536,7 +536,7 @@ export function registerReviewScenarios({ B, w, fake, scenario, flush, all, btn,
     assert.match(closingRow('residual'), /Resto sem explicação.*R\$ 0\.00/);
     assert.ok(chipsIn(panel).includes('explicada'));
     assert.match(panel.textContent, /Informativo: R\$ 12\.50 de linhas da planilha sem par, datadas fora do período/);
-    assert.equal(headerOf('Total no Recta após importar'), 'R$ 621.60R$ 48.90 a mais que o OFX', 'the header total and difference come from the closing, not from the estimate of the client (which cannot see the manual row)');
+    assert.equal(headerOf('Total no Prumo após importar'), 'R$ 621.60R$ 48.90 a mais que o OFX', 'the header total and difference come from the closing, not from the estimate of the client (which cannot see the manual row)');
   });
   const headerOf = (label) => all('dt').find((dt) => dt.textContent === label)?.nextElementSibling?.textContent ?? null;
 
@@ -572,7 +572,7 @@ export function registerReviewScenarios({ B, w, fake, scenario, flush, all, btn,
   rs('CL4 an older server without closing: no panel, and the header keeps the estimate of the client', async () => {
     await mountCard(makePreview({ withClosing: false }));
     assert.equal(closingPanel(), undefined);
-    assert.match(headerOf('Total no Recta após importar'), /^R\$ \d+\.\d\d/);
+    assert.match(headerOf('Total no Prumo após importar'), /^R\$ \d+\.\d\d/);
     assert.ok(box(LIV), 'the rest of the preview is there');
   });
 

@@ -35,12 +35,12 @@ check('QN-b: nothing is offered while a request is in flight or before the previ
   assert.deepEqual(CQ.cardQueueControls({ busy: false, hasBuilt: false, blocker: NOTHING }), NONE);
 });
 
-check('QN-c: statement queue controls: all rows in Recta continues; no row at all, or a failed confirm, stays disabled with the reason', () => {
+check('QN-c: statement queue controls: all rows in Prumo continues; no row at all, or a failed confirm, stays disabled with the reason', () => {
   const row = (duplicate: boolean) => ({ date: '2026-09-01', description: 'x', amount: 1, type: 'EXPENSE', duplicate });
   const ok = SQ.statementQueueControls({ busy: false, preview: { rows: [row(false), row(true)] }, confirmError: null });
   assert.deepEqual(ok, { canContinue: false, applyRestEnabled: true, note: null, blockerText: null });
   const dup = SQ.statementQueueControls({ busy: false, preview: { rows: [row(true), row(true)] }, confirmError: null });
-  assert.deepEqual(dup, { canContinue: true, applyRestEnabled: true, note: 'Este arquivo não tem novidades: todas as linhas já estão no Recta.', blockerText: null });
+  assert.deepEqual(dup, { canContinue: true, applyRestEnabled: true, note: 'Este arquivo não tem novidades: todas as linhas já estão no Prumo.', blockerText: null });
   const empty = SQ.statementQueueControls({ busy: false, preview: { rows: [] }, confirmError: null });
   assert.deepEqual(empty, { canContinue: false, applyRestEnabled: false, note: null, blockerText: 'Nenhuma transação encontrada no arquivo.' });
   const failed = SQ.statementQueueControls({ busy: false, preview: { rows: [row(true)] }, confirmError: 'x' });

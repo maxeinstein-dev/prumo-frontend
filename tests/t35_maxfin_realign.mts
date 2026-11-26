@@ -315,7 +315,7 @@ check('RE-c: singular forms and a removal card (what leaves the sheet stays in t
   const removal = prop({ id: 'bills:6:-2', section: 'bills', kind: 'removal', shift: -2, moves: [mv(31, 8, 6, {}, 'bills'), mv(32, 9, 7, {}, 'bills')], removed: [{ transactionId: 'g', from: ref('bills', 6), to: ref('bills', 9), description: 'Velha', amount: 5 }], insertedRefs: [] });
   const v = R.realignCardView([removal], {}, 'bills:6:-2');
   assert.equal(v.movesText, '2 lançamentos sobem 2 linhas (linhas removidas acima)');
-  assert.equal(v.removedText, '1 lançamento removido da planilha continua no Recta e assume a linha que o bloco desocupa');
+  assert.equal(v.removedText, '1 lançamento removido da planilha continua no Prumo e assume a linha que o bloco desocupa');
   assert.equal(v.insertedText, null);
   assert.equal(R.realignCardView([removal], {}, 'bills:6:-2').sectionLabel, 'Contas fixas');
 });

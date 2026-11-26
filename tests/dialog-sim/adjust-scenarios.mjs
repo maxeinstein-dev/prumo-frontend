@@ -116,7 +116,7 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
     const server = createServer([MP]);
     await mount(server);
     assert.match(bodyText(), /Ajustar saldo de Mercado Pago/);
-    assert.match(bodyText(), /Saldo atual no Recta:\s*R\$ 3665\.04/);
+    assert.match(bodyText(), /Saldo atual no Prumo:\s*R\$ 3665\.04/);
     assert.equal(byId('adjust-target').value, '');
     assert.equal(byId('adjust-date').value, TODAY);
     assert.equal(byId('adjust-reason').value, 'Ajuste de saldo');

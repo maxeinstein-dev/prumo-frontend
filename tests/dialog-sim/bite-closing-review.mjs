@@ -30,7 +30,7 @@ const MUTANTS = [
   // ---- utils/cardOfx.ts: merges and reasons (GA) ------------------------------------------------------------
   { name: 'a-merge-not-matched', suite: 'pure', rel: CARD, old: "  'enrich-merge': 'matched',\n", neu: '', expect: 'GA1' },
   { name: 'a-merge-count-forgets-target', suite: 'pure', rel: CARD, old: 'return 1 + (proposal.absorbed?.length ?? 0);', neu: 'return proposal.absorbed?.length ?? 0;', expect: 'GA2' },
-  { name: 'a-estimate-merge-ticked-keeps-sheet', suite: 'pure', rel: CARD, old: '      if (isGroupSelected(selection, group)) {\n        rectaCents += group.netCents;', neu: '      if (isGroupSelected(selection, group)) {\n        rectaCents += signedCents(target.amount, target.type);', expect: 'GA4' },
+  { name: 'a-estimate-merge-ticked-keeps-sheet', suite: 'pure', rel: CARD, old: '      if (isGroupSelected(selection, group)) {\n        prumoCents += group.netCents;', neu: '      if (isGroupSelected(selection, group)) {\n        prumoCents += signedCents(target.amount, target.type);', expect: 'GA4' },
   { name: 'a-estimate-merge-unticked-forgets-absorbed', suite: 'pure', rel: CARD, old: ' + sumSignedCents(group.proposal.absorbed ?? []);', neu: ';', expect: 'GA4' },
   { name: 'a-reason-residue-without-amount', suite: 'pure', rel: CARD, old: 'text: `parecida com a planilha: ${formatAmount(c.amount, c.type)}`,', neu: "text: 'parecida com a planilha',", expect: 'GA5' },
   { name: 'a-reason-unknown-hidden', skip: true /* stale since the unknown-reason chip stopped showing the slug; n-reason-slug-leaks covers it */, suite: 'pure', rel: CARD, old: "      return { reason, tone: 'gray', text: reason, title:", neu: '      return null; // ', expect: 'GA5' },

@@ -78,9 +78,9 @@ const reset = (mode: string | null, token: string | null) => {
   assigned.length = 0;
   win.location.pathname = '/app';
   authMode.clearAuthModeCache();
-  if (mode) storage.setItem('recta_auth_mode', mode);
-  if (token) storage.setItem('recta_token', token);
-  storage.setItem('recta_user', JSON.stringify({ id: 'u1', email: 'a@example.com' }));
+  if (mode) storage.setItem('prumo_auth_mode', mode);
+  if (token) storage.setItem('prumo_token', token);
+  storage.setItem('prumo_user', JSON.stringify({ id: 'u1', email: 'a@example.com' }));
 };
 
 // The axios client with a scripted server: records the Authorization header of each request.
@@ -150,8 +150,8 @@ check('shouldEndLocalSession: 401, local mode and a stored token, all three', ()
 check('endExpiredLocalSession: forgets token and user, goes to /login once, not from /login', () => {
   reset('local', 'jwt');
   session.endExpiredLocalSession();
-  assert.equal(storage.getItem('recta_token'), null);
-  assert.equal(storage.getItem('recta_user'), null);
+  assert.equal(storage.getItem('prumo_token'), null);
+  assert.equal(storage.getItem('prumo_user'), null);
   assert.deepEqual(assigned, ['/login']);
   assigned.length = 0;
   win.location.pathname = '/login';
@@ -183,8 +183,8 @@ await checkAsync('401 in local mode with a stored token clears the session and g
   answer = { status: 401, data: { success: false, error: { code: 'INVALID_TOKEN', message: 'Invalid token' } } };
   const r = await call();
   assert.deepEqual(r, { ok: false, status: 401 });
-  assert.equal(storage.getItem('recta_token'), null);
-  assert.equal(storage.getItem('recta_user'), null);
+  assert.equal(storage.getItem('prumo_token'), null);
+  assert.equal(storage.getItem('prumo_user'), null);
   assert.deepEqual(assigned, ['/login']);
 });
 
@@ -192,7 +192,7 @@ await checkAsync('401 in firebase mode does not touch a stored local token or na
   reset('firebase', 'jwt');
   answer = { status: 401, data: {} };
   await call();
-  assert.equal(storage.getItem('recta_token'), 'jwt');
+  assert.equal(storage.getItem('prumo_token'), 'jwt');
   assert.deepEqual(assigned, []);
 });
 
@@ -201,7 +201,7 @@ await checkAsync('other errors in local mode (403, 404, 429, 500) keep the sessi
     reset('local', 'jwt');
     answer = { status, data: {} };
     await call();
-    assert.equal(storage.getItem('recta_token'), 'jwt', `status ${status}`);
+    assert.equal(storage.getItem('prumo_token'), 'jwt', `status ${status}`);
     assert.deepEqual(assigned, [], `status ${status}`);
   }
 });

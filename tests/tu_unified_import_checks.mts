@@ -549,7 +549,7 @@ check('lacksClosingDay: absent, null or out of range is a card without closing d
 });
 
 check('visibleCardWarnings: the server warning about the closing day is hidden only while the notice is shown', () => {
-  const server = 'O cartão "Nubank" não tem dia de fechamento configurado: no Recta as faturas seguem o mês calendário, e a data real de uma compra pode levá-la para outra fatura.';
+  const server = 'O cartão "Nubank" não tem dia de fechamento configurado: no Prumo as faturas seguem o mês calendário, e a data real de uma compra pode levá-la para outra fatura.';
   const other = 'O saldo da fatura no OFX (R$ 100,00) difere do total das linhas (R$ 195,90).';
   assert.equal(CQ.isClosingDayServerWarning(server), true);
   assert.equal(CQ.isClosingDayServerWarning(other), false);

@@ -239,7 +239,7 @@ export function registerCardScenarios({ B, w, fake, scenario, flush, all, btn, b
     assert.equal(headerValue('Fatura'), 'Outubro/2026pelo fechamento do extrato');
     assert.equal(headerValue('Período do extrato'), '2026-09-02 a 2026-10-02');
     assert.equal(headerValue('Total do OFX'), 'R$ 919.06');
-    assert.equal(headerValue('Total no Recta após importar'), 'R$ 958.96R$ 39.90 a mais que o OFX');
+    assert.equal(headerValue('Total no Prumo após importar'), 'R$ 958.96R$ 39.90 a mais que o OFX');
     assert.equal(document.getElementById('card-ofx-month').value, '2026-10');
     // already reconciled: collapsed
     const reconciled = btn(/^Já conciliadas \(1\)$/);
@@ -281,7 +281,7 @@ export function registerCardScenarios({ B, w, fake, scenario, flush, all, btn, b
     assert.ok(sheetOnly.textContent.includes('Assinatura Streaming') && sheetOnly.querySelectorAll('input').length === 0);
     const payment = sectionTitled(/^Pagamento da fatura de setembro\/2026$/);
     assert.match(payment.textContent, /No OFX: R\$ 900\.00 em 2026-09-09 \(Pagamento recebido\)\./);
-    assert.match(payment.textContent, /Registrado no Recta: R\$ 905\.00 em 2026-09-10, da conta Conta Principal\./);
+    assert.match(payment.textContent, /Registrado no Prumo: R\$ 905\.00 em 2026-09-10, da conta Conta Principal\./);
     assert.ok(document.getElementById('card-ofx-payment').checked);
     assert.match(payment.textContent, /Substituir o pagamento registrado \(R\$ 905\.00 em 2026-09-10\) por um novo de R\$ 900\.00 em 2026-09-09/);
     assert.match(payment.textContent, /O pagamento atual é desfeito e registrado de novo; se houver mais de um pagamento registrado para essa fatura, eles viram um só\./);
@@ -295,14 +295,14 @@ export function registerCardScenarios({ B, w, fake, scenario, flush, all, btn, b
     assert.equal(blockerText(), null);
   });
 
-  cardScenario('K2 group toggles and bulk links drive the footer, the Recta total and the request (lines echoed, groups, categories, payment)', async () => {
+  cardScenario('K2 group toggles and bulk links drive the footer, the Prumo total and the request (lines echoed, groups, categories, payment)', async () => {
     await mountCard();
     await toCardPreview(makeCard());
     await toggle(box(GROUP_LABELS.exact));
     await toggle(box(GROUP_LABELS.rev));
     await toggle(box(GROUP_LABELS.livraria));
     assert.equal(footerText(), '6 propostas marcadas · 3 a enriquecer · 1 parcela futura a consumir · 1 nova (R$ 300.00) · 1 par compra/estorno');
-    assert.equal(headerValue('Total no Recta após importar'), 'R$ 913.46R$ 5.60 a menos que o OFX', 'an unticked new line is not recorded');
+    assert.equal(headerValue('Total no Prumo após importar'), 'R$ 913.46R$ 5.60 a menos que o OFX', 'an unticked new line is not recorded');
     // bulk: "Marcar todas" never ticks the ambiguous sum; "Desmarcar todas" clears the section
     await click(btn(/^Desmarcar todas as pareadas$/));
     assert.deepEqual([ticks().exact, ticks().plan, ticks().sum, ticks().paid, ticks().amb], [false, false, false, false, false]);
@@ -326,7 +326,7 @@ export function registerCardScenarios({ B, w, fake, scenario, flush, all, btn, b
     assert.equal(payload.lines.length, 17, 'every line goes back, reconciled and payments included');
     for (const l of payload.lines) assert.deepEqual(Object.keys(l).sort(), ['amount', 'date', 'fitid', 'installment', 'kind', 'memo', 'merchant', 'ref', 'type']);
     assert.deepEqual(payload.lines.find((l) => l.memo === 'Eletro Delta - Parcela 1/3').installment, { number: 1, total: 3 });
-    assert.ok(JSON.parse(w.localStorage.getItem('recta.maxfin.categoryChoices')).h1['EXPENSE|eletro delta'], 'the choice is remembered with the sheet ones');
+    assert.ok(JSON.parse(w.localStorage.getItem('prumo.maxfin.categoryChoices')).h1['EXPENSE|eletro delta'], 'the choice is remembered with the sheet ones');
   });
 
   cardScenario('K3 payment of the previous invoice to create: Confirm waits for a source account (never a card); the request carries it', async () => {
@@ -539,7 +539,7 @@ export function registerCardScenarios({ B, w, fake, scenario, flush, all, btn, b
     assert.ok(paired.checked, 'the pair with the sheet credit is a normal exact match, ticked');
     assert.ok(chipsIn(paired.closest('tr')).includes('pagamento') && paired.closest('tr').textContent.includes('+R$ 70.00'));
     assert.equal(headerValue('Total do OFX'), 'R$ 919.06');
-    assert.equal(headerValue('Total no Recta após importar'), 'R$ 958.96R$ 39.90 a mais que o OFX', 'payments stay out of both totals');
+    assert.equal(headerValue('Total no Prumo após importar'), 'R$ 958.96R$ 39.90 a mais que o OFX', 'payments stay out of both totals');
     fake.cardConfirm = async () => ({ data: OK });
     await click(confirmBtn());
     await flush(20);
@@ -560,11 +560,11 @@ export function registerCardScenarios({ B, w, fake, scenario, flush, all, btn, b
     const note = news.querySelector('[role="note"]');
     assert.ok(note, 'the notice sits in the new section');
     assert.equal(note.textContent, 'Este mês já tem linhas da planilha: as novas vieram desmarcadas.'
-      + 'Sobram no OFX 2 lançamentos (R$ 345.50); na planilha, sem par no OFX, 1 transação (R$ 39.90). Marque as novas que faltam no Recta antes de confirmar.');
+      + 'Sobram no OFX 2 lançamentos (R$ 345.50); na planilha, sem par no OFX, 1 transação (R$ 39.90). Marque as novas que faltam no Prumo antes de confirmar.');
     assert.match(news.textContent, /0 marcadas/);
     assert.deepEqual([ticks().livraria, ticks().eletro], [false, false]);
     assert.equal(footerText(), '5 propostas marcadas · 4 a enriquecer · 1 parcela futura a consumir');
-    assert.equal(headerValue('Total no Recta após importar'), 'R$ 613.46R$ 305.60 a menos que o OFX');
+    assert.equal(headerValue('Total no Prumo após importar'), 'R$ 613.46R$ 305.60 a menos que o OFX');
     await click(btn(/^Marcar todas as novas$/));
     assert.deepEqual([ticks().livraria, ticks().eletro], [true, true]);
     assert.match(sectionTitled(/^Novas \(2\)$/).textContent, /2 marcadas/);
@@ -734,7 +734,7 @@ export function registerCardScenarios({ B, w, fake, scenario, flush, all, btn, b
     await toCardPreview(card);
     assert.match(sectionTitled(/^Compra e estorno/).textContent, /A marcação inicial é a sugestão do servidor/);
     await changeSelect(all('select').find((s) => s.getAttribute('aria-label') === 'Categoria para Eletro Delta'), 'system:UTILITIES');
-    assert.deepEqual(Object.keys(JSON.parse(w.localStorage.getItem('recta.maxfin.categoryChoices'))), ['h-preview']);
+    assert.deepEqual(Object.keys(JSON.parse(w.localStorage.getItem('prumo.maxfin.categoryChoices'))), ['h-preview']);
   });
 
   cardScenario('RV-S7 inactive accounts are not offered as the source of the payment', async () => {
@@ -829,7 +829,7 @@ export function registerCardScenarios({ B, w, fake, scenario, flush, all, btn, b
     assert.match(heldRow.textContent, /confira se é o par certo antes de marcar/, 'visible explanation');
     assert.equal(plainRow.querySelector('[data-recurrence-ambiguity]'), null, 'the plain one has no explanation');
     assert.equal(footerText(), '1 proposta marcada · 1 a enriquecer');
-    assert.equal(headerValue('Total no Recta após importar'), 'R$ 77.90R$ 2.25 a menos que o OFX', '47.90 ticked + 30.00 held at its forecast');
+    assert.equal(headerValue('Total no Prumo após importar'), 'R$ 77.90R$ 2.25 a menos que o OFX', '47.90 ticked + 30.00 held at its forecast');
     fake.cardConfirm = async () => ({ data: { ...OK, enriched: 1, consumedFutures: 0, created: 0, futureInstallments: 0, payment: null, createdCategories: [] } });
     await click(confirmBtn());
     await flush(20);
@@ -844,9 +844,9 @@ export function registerCardScenarios({ B, w, fake, scenario, flush, all, btn, b
     const held = box('Parear com o lançamento gerado pela recorrência: Clube Gama');
     await toggle(held);
     assert.equal(footerText(), '2 propostas marcadas · 2 a enriquecer');
-    assert.equal(headerValue('Total no Recta após importar'), 'R$ 80.15igual ao OFX');
+    assert.equal(headerValue('Total no Prumo após importar'), 'R$ 80.15igual ao OFX');
     await toggle(plain);
-    assert.equal(headerValue('Total no Recta após importar'), 'R$ 82.25R$ 2.10 a mais que o OFX', '50.00 forecast untouched + 32.25');
+    assert.equal(headerValue('Total no Prumo após importar'), 'R$ 82.25R$ 2.10 a mais que o OFX', '50.00 forecast untouched + 32.25');
     fake.cardConfirm = async () => ({ data: { ...OK, enriched: 1, consumedFutures: 0, created: 0, futureInstallments: 0, payment: null, createdCategories: [] } });
     await click(confirmBtn());
     await flush(20);
