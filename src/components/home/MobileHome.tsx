@@ -206,7 +206,7 @@ export default function MobileHome() {
       </section>
 
       {/* P07: its own card, apart from the big number (that one is the month's leftover) */}
-      <SpendableCard data={data} currency={currency} tx={(key, vars) => cashFlowText(null, key, vars)} variant="shell" testId="home-spendable" />
+      <SpendableCard data={data} currency={currency} tx={(key, vars) => cashFlowText(null, key, vars)} variant="shell" testId="home-spendable" simulator />
 
       {strips.map((strip) => (
         <button
