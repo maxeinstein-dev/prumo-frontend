@@ -7,6 +7,7 @@
  * description, date, notes, paid and competenceMonth. Anything else is a 400, so the body is built here from scratch.
  */
 import { accountLabels } from './accountLabels';
+import type { CaptureInvestment } from './captureInvestment';
 
 /** The apps the phone reads. The package names are the ones confirmed on the device (android/ capture plugin). */
 export const CAPTURE_APPS = [
@@ -30,6 +31,8 @@ export interface CaptureSuggestion {
   description: string | null;
   /** ISO 8601 instant the notification was posted. */
   date: string;
+  /** P21 L7: only on XP drafts (a dividend or a reinvestment), which become investment movements. */
+  investment?: CaptureInvestment | null;
 }
 
 /** One row of GET /captures (and of the transition answers, without the suggestion). */
@@ -112,8 +115,14 @@ export function formatCaptureDateTime(iso: string | null | undefined): string {
 }
 
 /** The app's name for the card ("Nubank"); an unknown package shows as it is. */
+/**
+ * Apps the phone reads that have no account rules (CAPTURE_APPS feeds the rules screen, app by kind): only a label.
+ * XP (P21 L7) gives investment drafts, never transactions.
+ */
+const OTHER_APP_LABELS: Record<string, string> = { 'br.com.xp.carteira': 'XP' };
+
 export function appLabel(pkg: string): string {
-  return CAPTURE_APPS.find((app) => app.package === pkg)?.label ?? pkg;
+  return CAPTURE_APPS.find((app) => app.package === pkg)?.label ?? OTHER_APP_LABELS[pkg] ?? pkg;
 }
 
 /** The form state a suggestion opens with. `todayKey` is used only when the capture's date does not parse. */

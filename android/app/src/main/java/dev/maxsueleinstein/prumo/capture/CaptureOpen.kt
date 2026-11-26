@@ -1,7 +1,7 @@
-package dev.maxsueleinstein.recta.capture
+package dev.maxsueleinstein.prumo.capture
 
 import android.content.Intent
-import dev.maxsueleinstein.recta.MainActivity
+import dev.maxsueleinstein.prumo.MainActivity
 
 /**
  * How a tap on the capture notice reaches the capture box (review of 15/11/2026). The launch intent of the package

@@ -3,10 +3,10 @@ apply plugin: 'kotlin-android'
 apply plugin: 'com.google.devtools.ksp'
 
 android {
-    namespace = "dev.maxsueleinstein.recta"
+    namespace = "dev.maxsueleinstein.prumo"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "dev.maxsueleinstein.recta"
+        applicationId "dev.maxsueleinstein.prumo"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

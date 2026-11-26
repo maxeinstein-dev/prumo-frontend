@@ -1,4 +1,4 @@
-package dev.maxsueleinstein.recta.capture
+package dev.maxsueleinstein.prumo.capture
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -14,8 +14,19 @@ class AllowedPackagesTest {
     }
 
     @Test
-    fun theListHoldsExactlyTheTwoBankAppsAndGmail() {
-        assertEquals(setOf("com.nu.production", "com.mercadopago.wallet", "com.google.android.gm"), AllowedPackages.ALLOWED)
+    fun allowsTheXpInvestmentApp() {
+        // P21 L7: the server has a reader for XP (dividends and dividend reinvestment); the phone must let it through.
+        assertTrue(AllowedPackages.isAllowed("br.com.xp.carteira"))
+        assertFalse(AllowedPackages.isAllowed("br.com.xp.carteira.fake"))
+        assertFalse(AllowedPackages.isAllowed("br.com.xp"))
+    }
+
+    @Test
+    fun theListHoldsExactlyTheTwoBankAppsXpAndGmail() {
+        assertEquals(
+            setOf("com.nu.production", "com.mercadopago.wallet", "br.com.xp.carteira", "com.google.android.gm"),
+            AllowedPackages.ALLOWED,
+        )
     }
 
     @Test
@@ -29,6 +40,13 @@ class AllowedPackagesTest {
         assertFalse(AllowedPackages.isAllowed("com.nu"))
         assertFalse(AllowedPackages.isAllowed("COM.NU.PRODUCTION"))
         assertFalse(AllowedPackages.isAllowed(" com.nu.production"))
+    }
+
+    @Test
+    fun aNotificationFromXpBecomesAnItem() {
+        val item = NotificationFilter.build("br.com.xp.carteira", "TEST11 pagou rendimentos!", "Você recebeu R$ 7,77 de TEST11.", null, null, 1_700_000_000_000L)
+        assertEquals("br.com.xp.carteira", item?.packageName)
+        assertEquals("TEST11 pagou rendimentos!", item?.title)
     }
 
     @Test

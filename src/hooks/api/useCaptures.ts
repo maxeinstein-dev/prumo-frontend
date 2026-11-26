@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ConfirmInvestmentBody } from '../../utils/captureInvestment';
 import type { TransferBody } from '../../utils/captureTransfer';
 import { useAuth } from '../../context/AuthContext';
 import { apiClient } from '../../utils/api';
@@ -205,5 +206,49 @@ export function useSaveCaptureCardRules(householdId: string | undefined) {
       // The suggested account of the pending captures may change with the rules.
       void queryClient.invalidateQueries({ queryKey: ['captures', 'list'] });
     },
+  });
+}
+
+/** P21 L7: an XP draft becomes an investment movement (never a transaction). */
+export function useConfirmInvestmentCapture() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; householdId?: string; body: ConfirmInvestmentBody }) =>
+      bodyOf<unknown>(await apiClient.post(withHousehold(`/captures/${input.id}/confirm-investment`, input.householdId), input.body)).data,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['captures'] });
+      void queryClient.invalidateQueries({ queryKey: ['investments'] });
+      void queryClient.invalidateQueries({ queryKey: ['savings-goals'] });
+    },
+  });
+}
+
+/** One notification kept "em estudo": an XP text no reader understands yet. Read only; deleted after 60 days. */
+export interface StudyCapture {
+  id: string;
+  package: string;
+  title: string | null;
+  text: string;
+  postedAt: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+/** P21 L7: GET /captures/study, newest first, page by page. */
+export function useStudyCaptures(householdId: string | undefined) {
+  const { currentUser } = useAuth();
+  return useInfiniteQuery({
+    queryKey: ['captures', 'study', householdId ?? null],
+    enabled: !!currentUser && !!householdId,
+    initialPageParam: null as string | null,
+    queryFn: async ({ pageParam }) => {
+      const query: Record<string, unknown> = { limit: CAPTURE_PAGE_SIZE };
+      if (householdId) query.householdId = householdId;
+      if (pageParam) query.cursor = pageParam;
+      const body = bodyOf<StudyCapture[]>(await apiClient.get<StudyCapture[]>('/captures/study', query));
+      return { data: body.data ?? [], pagination: body.pagination ?? { nextCursor: null, hasMore: false } };
+    },
+    getNextPageParam: (last) => (last.pagination.hasMore ? last.pagination.nextCursor : undefined),
+    refetchOnWindowFocus: false,
   });
 }

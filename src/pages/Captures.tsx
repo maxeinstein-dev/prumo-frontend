@@ -6,6 +6,8 @@ import { EmptyState } from '../components/EmptyState';
 import CaptureCard, { type CaptureBusy } from '../components/captures/CaptureCard';
 import CaptureConfirmModal from '../components/captures/CaptureConfirmModal';
 import CaptureTransferBlock from '../components/captures/CaptureTransferBlock';
+import InvestmentCaptureDialog from '../components/captures/InvestmentCaptureDialog';
+import StudyCaptureList from '../components/captures/StudyCaptureList';
 import { hiddenPairSides, transferPairOf, type TransferBody } from '../utils/captureTransfer';
 import { useI18n } from '../context/I18nContext';
 import { useToastContext } from '../context/ToastContext';
@@ -49,17 +51,21 @@ const Captures = () => {
   const canEdit = canWritePeople(household);
   const { success, error: showError } = useToastContext();
 
-  // ?status=DISMISSED opens the dismissed tab (the link of Settings > Leitura das notificações).
+  // ?status=DISMISSED opens the dismissed tab (the link of Settings > Leitura das notificações); ?status=STUDY the
+  // notifications kept "em estudo" (P21 L7), which have their own list.
   const [searchParams, setSearchParams] = useSearchParams();
-  const status: CaptureStatus = searchParams.get('status') === 'DISMISSED' ? 'DISMISSED' : 'PENDING';
-  const setStatus = (next: CaptureStatus) =>
+  const requested = searchParams.get('status');
+  const view: CaptureStatus | 'STUDY' = requested === 'DISMISSED' ? 'DISMISSED' : requested === 'STUDY' ? 'STUDY' : 'PENDING';
+  const status: CaptureStatus = view === 'DISMISSED' ? 'DISMISSED' : 'PENDING';
+  const setStatus = (next: CaptureStatus | 'STUDY') =>
     setSearchParams((params) => {
       const copy = new URLSearchParams(params);
-      if (next === 'DISMISSED') copy.set('status', 'DISMISSED');
-      else copy.delete('status');
+      if (next === 'PENDING') copy.delete('status');
+      else copy.set('status', next);
       return copy;
     }, { replace: true });
   const [editing, setEditing] = useState<CaptureItem | null>(null);
+  const [investing, setInvesting] = useState<CaptureItem | null>(null);
 
   const list = useCaptures({ householdId, status });
   const pendingCount = useCapturesCount(householdId, 'PENDING');
@@ -181,13 +187,16 @@ const Captures = () => {
   };
 
   const pendingBadge = captureBadgeText(pendingCount.data ?? 0);
-  const tabs: Array<{ key: CaptureStatus; label: string; count?: string }> = [
+  const tabs: Array<{ key: CaptureStatus | 'STUDY'; label: string; count?: string }> = [
     { key: 'PENDING', label: tx('captureTabPending'), count: pendingBadge || undefined },
     { key: 'DISMISSED', label: tx('captureTabDismissed') },
+    { key: 'STUDY', label: 'Em estudo' },
   ];
 
   let body: ReactNode;
-  if (!householdId || list.isPending) {
+  if (view === 'STUDY') {
+    body = <StudyCaptureList householdId={householdId} />;
+  } else if (!householdId || list.isPending) {
     body = <p className="text-sm font-light text-gray-500 dark:text-gray-400" role="status">{tx('captureLoading')}</p>;
   } else if (list.isError) {
     body = (
@@ -220,6 +229,7 @@ const Captures = () => {
               onEdit={() => setEditing(item)}
               onDismiss={() => void handleDismiss(item)}
               onRestore={() => void handleRestore(item)}
+              onInvest={() => setInvesting(item)}
               transfer={transferPairOf(item) ? (
                 <CaptureTransferBlock
                   item={item}
@@ -256,7 +266,7 @@ const Captures = () => {
 
       <div role="tablist" className="mb-4 flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 max-w-2xl">
         {tabs.map((tab) => {
-          const active = status === tab.key;
+          const active = view === tab.key;
           return (
             <button
               key={tab.key}
@@ -278,6 +288,8 @@ const Captures = () => {
       </div>
 
       <div className="max-w-2xl">{body}</div>
+
+      <InvestmentCaptureDialog item={investing} householdId={householdId} onClose={() => setInvesting(null)} />
 
       {editing && householdId && (
         <CaptureConfirmModal

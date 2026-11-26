@@ -1,4 +1,4 @@
-# Recta Android app (notification capture)
+# Prumo Android app (notification capture)
 
 Capacitor shell around the web app, plus a local Kotlin plugin (`CaptureReader`) that reads the notifications of the
 bank apps on the allow list and sends their raw text to the API (`POST /captures`). Only for personal use: debug APK,
@@ -6,7 +6,7 @@ installed by USB. There is no release signing and no Play Store build here.
 
 ## What is where
 
-- `app/src/main/java/dev/maxsueleinstein/recta/capture/` the plugin: `AllowedPackages.kt` (the allow list, one constant),
+- `app/src/main/java/dev/maxsueleinstein/prumo/capture/` the plugin: `AllowedPackages.kt` (the allow list, one constant),
   `CaptureListenerService.kt` (reads notifications), `CaptureDatabase.kt` (Room queue), `CaptureUploader.kt` and
   `UploadWorker.kt` (WorkManager upload with exponential backoff), `CaptureConfig.kt` (device token in
   `EncryptedSharedPreferences`), `CaptureReaderPlugin.kt` (bridge to the web layer).
@@ -44,15 +44,15 @@ Every time the web code changes, run `npm run android:sync` again before buildin
 
 ## First run on the phone
 
-1. Open Recta and sign in.
+1. Open Prumo and sign in.
 2. Settings > "Leitor de notificações" > **Vincular este aparelho**. This calls `POST /devices` with your session and
    hands the new device token to the app; it is stored encrypted on the phone and never shown.
-3. **Acesso às notificações**: tap "Abrir acesso às notificações" and turn Recta on.
+3. **Acesso às notificações**: tap "Abrir acesso às notificações" and turn Prumo on.
    - An APK installed from outside the store is "restricted": the switch can be greyed out or the system says the setting
      is restricted. Open App info (the screen has a button for it), tap the three dots at the top right, choose
      **Allow restricted settings**, confirm, then go back and turn the switch on. (One UI may ask for the screen lock.)
-4. **Bateria**: tap "Abrir otimização de bateria", choose "All apps", find Recta and select "Don't optimize". On One UI also
-   remove Recta from Settings > Battery > Background usage limits > "Sleeping apps" / "Deep sleeping apps".
+4. **Bateria**: tap "Abrir otimização de bateria", choose "All apps", find Prumo and select "Don't optimize". On One UI also
+   remove Prumo from Settings > Battery > Background usage limits > "Sleeping apps" / "Deep sleeping apps".
 5. Back on the screen, everything should read "Tudo certo". "Enviar agora" schedules an upload immediately.
 
 ## Before the first collection week

@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import CaptureConfirmModal from '../captures/CaptureConfirmModal';
+import InvestmentCaptureDialog from '../captures/InvestmentCaptureDialog';
+import { investmentOf, investmentTitle } from '../../utils/captureInvestment';
 import CaptureTransferBlock from '../captures/CaptureTransferBlock';
 import { hiddenPairSides, transferPairOf, type TransferBody } from '../../utils/captureTransfer';
 import { useI18n } from '../../context/I18nContext';
@@ -42,6 +44,7 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
   const confirmTransfer = useConfirmTransferPair();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CaptureItem | null>(null);
+  const [investing, setInvesting] = useState<CaptureItem | null>(null);
   // Captures with a request running. A second tap before the re-render (isPending arrives after it) is ignored, so a
   // double tap never confirms or dismisses the same capture twice; other captures stay free.
   const inFlight = useRef(new Set<string>());
@@ -57,9 +60,14 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
 
   const total = count.data ?? 0;
   if (!householdId || total <= 0) {
-    return editing && householdId ? (
-      <CaptureConfirmModal item={editing} householdId={householdId} onDone={() => setEditing(null)} onClose={() => setEditing(null)} />
-    ) : null;
+    return (
+      <>
+        {editing && householdId && (
+          <CaptureConfirmModal item={editing} householdId={householdId} onDone={() => setEditing(null)} onClose={() => setEditing(null)} />
+        )}
+        <InvestmentCaptureDialog item={investing} householdId={householdId} onClose={() => setInvesting(null)} />
+      </>
+    );
   }
 
   const items: CaptureItem[] = [];
@@ -116,6 +124,11 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
 
   const handleConfirm = async (item: CaptureItem) => {
     if (!householdId) return;
+    // P21 L7: an XP draft becomes an investment movement, never a transaction.
+    if (investmentOf(item)) {
+      setInvesting(item);
+      return;
+    }
     const result = oneTapConfirmBody(item.suggestion, localDayKey(new Date().toISOString()) ?? '');
     if (!result.ok) {
       setEditing(item);
@@ -186,13 +199,16 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
       <ul className="mt-1">
         {shown.map((item) => {
           const reading = readingOf(item);
-          const desc = reading.title || item.title || appLabel(item.package);
+          const investment = investmentOf(item);
+          const desc = investment ? investmentTitle(investment) : reading.title || item.title || appLabel(item.package);
           // Reais as the server sent them; the screen only formats.
-          const amount = reading.amount;
+          const amount = investment ? investment.amount : reading.amount;
           const warning = warningText(reading.warning);
           const oneTap = oneTapConfirmBody(item.suggestion, '0000-01-01').ok;
           const sign = captureAmountSign(item.suggestion.type);
-          const typeLabel = item.suggestion.type === 'INCOME'
+          const typeLabel = investment
+            ? 'Investimento'
+            : item.suggestion.type === 'INCOME'
             ? tx('captureFormIncome')
             : item.suggestion.type === 'EXPENSE'
               ? tx('captureFormExpense')
@@ -253,10 +269,10 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
                   type="button"
                   disabled={!canEdit || busy}
                   onClick={() => void handleConfirm(item)}
-                  aria-label={`${oneTap ? 'Lançar' : 'Completar'} captura: ${desc}`}
+                  aria-label={`${investment ? 'Lançar no investimento' : oneTap ? 'Lançar' : 'Completar'} captura: ${desc}`}
                   className={`${TOUCH} flex-1 rounded-xl bg-rc-accent px-3 text-sm font-semibold text-rc-onAccent disabled:opacity-50`}
                 >
-                  {oneTap ? 'Lançar' : 'Completar'}
+                  {investment ? 'Lançar' : oneTap ? 'Lançar' : 'Completar'}
                 </button>
               </div>
               )}
@@ -270,6 +286,8 @@ const MobileCaptureBox = ({ householdId, accounts, canEdit }: MobileCaptureBoxPr
         // so the space under the text equals the box's side padding (16 px), as it does without this line.
         <div className="-mb-3.5 mt-1">{footer}</div>
       )}
+
+      <InvestmentCaptureDialog item={investing} householdId={householdId} onClose={() => setInvesting(null)} />
 
       {editing && householdId && (
         <CaptureConfirmModal item={editing} householdId={householdId} onDone={() => setEditing(null)} onClose={() => setEditing(null)} />

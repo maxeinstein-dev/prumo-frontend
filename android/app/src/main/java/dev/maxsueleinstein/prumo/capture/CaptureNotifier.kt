@@ -1,4 +1,4 @@
-package dev.maxsueleinstein.recta.capture
+package dev.maxsueleinstein.prumo.capture
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -11,7 +11,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import dev.maxsueleinstein.recta.R
+import dev.maxsueleinstein.prumo.R
 import org.json.JSONObject
 
 /** Reads the notices out of the answer of POST /captures (`data.results[].notice`, see the backend's ingestCaptures). */
@@ -47,7 +47,7 @@ object CaptureNoticeJson {
  */
 object CaptureNotifier {
     const val CHANNEL_ID = "capture-notices"
-    const val EXTRA_OPEN = "dev.maxsueleinstein.recta.OPEN"
+    const val EXTRA_OPEN = "dev.maxsueleinstein.prumo.OPEN"
     const val OPEN_CAPTURES = "captures"
 
     fun canNotify(context: Context): Boolean {

@@ -1,4 +1,4 @@
-package dev.maxsueleinstein.recta.capture
+package dev.maxsueleinstein.prumo.capture
 
 /**
  * P01 D3: a new spending the server understood (the `notice` of an item in the answer of POST /captures). What counts

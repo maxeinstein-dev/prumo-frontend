@@ -1,18 +1,20 @@
-package dev.maxsueleinstein.recta.capture
+package dev.maxsueleinstein.prumo.capture
 
 /**
  * The only apps whose notifications are ever read. A notification from any other package is dropped on the phone, before
  * anything is stored or sent: this is the single place that decides it (the listener calls [isAllowed] first).
  *
- * Both ids were confirmed on the target phone (SM-A556E, Android 16) with `adb shell pm list packages`.
+ * The ids were confirmed on the target phone (SM-A556E, Android 16) with `adb shell pm list packages`.
  */
 object AllowedPackages {
     const val NUBANK = "com.nu.production"
     const val MERCADO_PAGO = "com.mercadopago.wallet"
+    /** XP (P21 L7): dividends and dividend reinvestment become investment drafts on the server, never transactions. */
+    const val XP = "br.com.xp.carteira"
     /** Gmail, for the e-mails of Google Pay and the banks only (see [isAllowedGmailSender]). */
     const val GMAIL = "com.google.android.gm"
 
-    val ALLOWED: Set<String> = setOf(NUBANK, MERCADO_PAGO, GMAIL)
+    val ALLOWED: Set<String> = setOf(NUBANK, MERCADO_PAGO, XP, GMAIL)
 
     /**
      * Senders (the title of a Gmail notification) whose e-mails are read: only the ones that have a reader on the server,

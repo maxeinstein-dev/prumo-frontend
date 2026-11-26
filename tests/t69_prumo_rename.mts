@@ -96,11 +96,11 @@ const walk = (dir: string): string[] =>
 
 // O que fica de fora de propósito, com o motivo:
 // - storageRename.ts: guarda os nomes antigos para migrar.
-// - __rectaNativeBack: ponte com o MainActivity do APK instalado; troca no lote do APK, junto com o código Android.
+// - recta-api: o endereço real da API em produção (scripts/android-sync.mjs) e o de exemplo dos testes Kotlin.
 // - recta.app, recta-backend-app (CSP), r/RectaApp, recta-selfhosted, recta-public: endereços do projeto original.
 // - "Recta/tools": caminho da pasta no disco citado em comentários.
 const ALLOWED_FILES = new Set(['src/utils/storageRename.ts']);
-const ALLOWED_TEXT = [/__rectaNativeBack/g, /recta-backend-app/g, /recta\.app/g, /r\/RectaApp/g, /recta-selfhosted/g, /recta-public/g, /Recta\/tools/g];
+const ALLOWED_TEXT = [/recta-api/g, /recta-backend-app/g, /recta\.app/g, /r\/RectaApp/g, /recta-selfhosted/g, /recta-public/g, /Recta\/tools/g];
 
 /**
  * "recta" como nome: no começo de palavra (Recta, recta_token, rectaCents) ou como parte de camelCase (ResetRecta).
@@ -129,6 +129,12 @@ const files = [
   ...walk(srcDir).filter((p) => /\.(tsx?|json|css|html)$/.test(p)),
   ...walk(join(root, 'public')).filter((p) => /\.(html|json|webmanifest|txt|xml|js)$/.test(p)),
   join(root, 'index.html'),
+  // R9, APK: the Android app (code, tests, resources, build) and the Capacitor config also say Prumo.
+  ...walk(join(root, 'android', 'app', 'src')).filter((p) => /\.(kt|java|xml)$/.test(p)),
+  join(root, 'android', 'app', 'build.gradle'),
+  join(root, 'android', 'variables.gradle'),
+  join(root, 'android', 'README.md'),
+  join(root, 'capacitor.config.ts'),
 ];
 
 check('guard: no "Recta" left in screens, languages, index.html or public/ (case-insensitive, outside the allowed list)', () => {

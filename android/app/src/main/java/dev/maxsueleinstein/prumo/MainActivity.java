@@ -1,13 +1,13 @@
-package dev.maxsueleinstein.recta;
+package dev.maxsueleinstein.prumo;
 
 import android.content.Intent;
 import android.os.Bundle;
 import androidx.activity.OnBackPressedCallback;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.PluginHandle;
-import dev.maxsueleinstein.recta.capture.CaptureOpen;
-import dev.maxsueleinstein.recta.capture.CaptureNotifier;
-import dev.maxsueleinstein.recta.capture.CaptureReaderPlugin;
+import dev.maxsueleinstein.prumo.capture.CaptureOpen;
+import dev.maxsueleinstein.prumo.capture.CaptureNotifier;
+import dev.maxsueleinstein.prumo.capture.CaptureReaderPlugin;
 
 public class MainActivity extends BridgeActivity {
     @Override
@@ -18,13 +18,13 @@ public class MainActivity extends BridgeActivity {
         // A recreated Activity (rotation, process restored) already handled the request it was started with.
         if (CaptureOpen.readsLaunchRequest(savedInstanceState != null)) handleOpenRequest(getIntent());
         // Capacitor 8 core registers no back handling, so the Activity finished on every back press. The back button
-        // asks the page (window.__rectaNativeBack, see src/native/nativeBack.ts): the page closes its layer or goes back
+        // asks the page (window.__prumoNativeBack, see src/native/nativeBack.ts): the page closes its layer or goes back
         // in its own history, and only answers "exit" when there is nothing left, then the Activity leaves as usual.
         // If the page does not answer (not loaded, or an error), the app leaves, as it did before.
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                getBridge().eval("(window.__rectaNativeBack ? window.__rectaNativeBack() : 'exit')", result -> {
+                getBridge().eval("(window.__prumoNativeBack ? window.__prumoNativeBack() : 'exit')", result -> {
                     // Exact match: "confirmExit" (the first back on Início) must not leave.
                     if (result == null || result.replace("\"", "").trim().equals("exit")) {
                         setEnabled(false);
