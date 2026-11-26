@@ -13,9 +13,9 @@ const money = (cents: number) => `R$ ${(cents / 100).toFixed(2)}`;
 
 console.log('\n[AB] ajustar saldo');
 
-check('AB-a: the mask fills from the right in integer cents ("380227" is 3.802,27) and drops leading zeros', () => {
-  assert.deepEqual(A.maskMoneyInput('380227'), { cents: 380227, display: 'R$ 3.802,27' });
-  assert.deepEqual(A.maskMoneyInput('R$ 3.802,27'), { cents: 380227, display: 'R$ 3.802,27' }, 'its own output parses back to the same value');
+check('AB-a: the mask fills from the right in integer cents ("438902" is 4.389,02) and drops leading zeros', () => {
+  assert.deepEqual(A.maskMoneyInput('438902'), { cents: 438902, display: 'R$ 4.389,02' });
+  assert.deepEqual(A.maskMoneyInput('R$ 4.389,02'), { cents: 438902, display: 'R$ 4.389,02' }, 'its own output parses back to the same value');
   assert.deepEqual(A.maskMoneyInput('5'), { cents: 5, display: 'R$ 0,05' });
   assert.deepEqual(A.maskMoneyInput('R$ 0,005'), { cents: 5, display: 'R$ 0,05' });
   assert.deepEqual(A.maskMoneyInput('000'), { cents: 0, display: 'R$ 0,00' });
@@ -42,15 +42,15 @@ check('AB-d: more than 12 digits are cut (the server limit is far above), intege
   assert.equal(r.display, 'R$ 1.234.567.890,12');
 });
 
-check('AB-e: centsToMaskedText and reaisToCents round trip (3665.04 * 100 is 366503.99999999994 in floats)', () => {
-  assert.equal(A.reaisToCents(3665.04), 366504);
-  assert.equal(A.reaisToCents(3802.27), 380227);
+check('AB-e: centsToMaskedText and reaisToCents round trip (4271.65 * 100 is 427164.99999999994 in floats)', () => {
+  assert.equal(A.reaisToCents(4271.65), 427165);
+  assert.equal(A.reaisToCents(4389.02), 438902);
   assert.equal(A.reaisToCents(-10.1), -1010);
   assert.equal(A.reaisToCents(0.29), 29, '0.29 * 100 is 28.999999999999996');
   assert.equal(A.reaisToCents(1.15), 115, '1.15 * 100 is 114.99999999999999');
   assert.equal(A.reaisToCents(-0.29), -29);
   assert.equal(A.reaisToCents(Number.NaN), 0);
-  assert.equal(A.centsToMaskedText(380227), 'R$ 3.802,27');
+  assert.equal(A.centsToMaskedText(438902), 'R$ 4.389,02');
   assert.equal(A.centsToMaskedText(-1), '-R$ 0,01');
 });
 
@@ -75,11 +75,11 @@ check('AB-g: the reason is "Saldo inicial" for a date before the current year, "
 });
 
 check('AB-h: validation: target required, zero difference refused, date required / real / not in the future', () => {
-  const ok = { currentCents: 366504, targetCents: 380227, date: '2025-12-31', reason: 'Saldo inicial' };
-  assert.deepEqual(A.validateAdjust(ok, NOW), { ok: true, differenceCents: 13723, errors: {} });
+  const ok = { currentCents: 427165, targetCents: 438902, date: '2025-12-31', reason: 'Saldo inicial' };
+  assert.deepEqual(A.validateAdjust(ok, NOW), { ok: true, differenceCents: 11737, errors: {} });
   assert.equal(A.validateAdjust({ ...ok, targetCents: null }, NOW).errors.target, 'Informe o saldo correto da conta.');
   assert.equal(A.validateAdjust({ ...ok, targetCents: null }, NOW).differenceCents, null);
-  const same = A.validateAdjust({ ...ok, targetCents: 366504 }, NOW);
+  const same = A.validateAdjust({ ...ok, targetCents: 427165 }, NOW);
   assert.equal(same.ok, false);
   assert.equal(same.differenceCents, 0);
   assert.match(same.errors.target, /não há o que ajustar/);
@@ -99,23 +99,23 @@ check('AB-i: a negative target and a lower balance give a negative difference', 
 });
 
 check('AB-j: the request body: wire number = cents / 100, date as typed, trimmed reason, default reason when blank', () => {
-  const base = { currentCents: 366504, targetCents: 380227, date: '2025-12-31', reason: '  Saldo inicial ' };
-  assert.deepEqual(A.buildAdjustBody(base, NOW), { newBalance: 3802.27, date: '2025-12-31', reason: 'Saldo inicial' });
-  assert.deepEqual(A.buildAdjustBody({ ...base, reason: '   ' }, NOW), { newBalance: 3802.27, date: '2025-12-31', reason: 'Saldo inicial' });
-  assert.deepEqual(A.buildAdjustBody({ ...base, date: '2026-10-06', reason: '' }, NOW), { newBalance: 3802.27, date: '2026-10-06', reason: 'Ajuste de saldo' });
+  const base = { currentCents: 427165, targetCents: 438902, date: '2025-12-31', reason: '  Saldo inicial ' };
+  assert.deepEqual(A.buildAdjustBody(base, NOW), { newBalance: 4389.02, date: '2025-12-31', reason: 'Saldo inicial' });
+  assert.deepEqual(A.buildAdjustBody({ ...base, reason: '   ' }, NOW), { newBalance: 4389.02, date: '2025-12-31', reason: 'Saldo inicial' });
+  assert.deepEqual(A.buildAdjustBody({ ...base, date: '2026-10-06', reason: '' }, NOW), { newBalance: 4389.02, date: '2026-10-06', reason: 'Ajuste de saldo' });
   assert.deepEqual(A.buildAdjustBody({ ...base, targetCents: -5 }, NOW), { newBalance: -0.05, date: '2025-12-31', reason: 'Saldo inicial' });
-  assert.equal(Math.round(A.buildAdjustBody(base, NOW).newBalance * 100), 380227);
+  assert.equal(Math.round(A.buildAdjustBody(base, NOW).newBalance * 100), 438902);
 });
 
 check('AB-k: no body for anything that does not validate', () => {
-  const base = { currentCents: 366504, targetCents: 380227, date: '2025-12-31', reason: '' };
+  const base = { currentCents: 427165, targetCents: 438902, date: '2025-12-31', reason: '' };
   assert.equal(A.buildAdjustBody({ ...base, targetCents: null }, NOW), null);
-  assert.equal(A.buildAdjustBody({ ...base, targetCents: 366504 }, NOW), null, 'nothing to adjust');
+  assert.equal(A.buildAdjustBody({ ...base, targetCents: 427165 }, NOW), null, 'nothing to adjust');
   assert.equal(A.buildAdjustBody({ ...base, date: '2026-10-07' }, NOW), null);
   assert.equal(A.buildAdjustBody({ ...base, date: '' }, NOW), null);
 });
 
 check('AB-l: the sentence names the entry: income for a higher target, expense for a lower one', () => {
-  assert.equal(A.describeAdjustment(13723, money), 'uma entrada de R$ 137.23');
+  assert.equal(A.describeAdjustment(11737, money), 'uma entrada de R$ 117.37');
   assert.equal(A.describeAdjustment(-1000, money), 'uma saída de R$ 10.00');
 });

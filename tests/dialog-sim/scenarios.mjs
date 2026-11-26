@@ -5,6 +5,11 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import { outcome, pendingReason } from '../pending.mjs';
 
+// The users are in Brazil, and some scenarios (G1: the day printed in the file) only prove anything in a zone behind
+// UTC. The simulation runs in São Paulo time unless TZ is given, so a UTC machine (CI) gives the same result as a
+// laptop here. Node applies a TZ set at runtime to every Date created after it.
+if (!process.env.TZ) process.env.TZ = 'America/Sao_Paulo';
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const variant = process.argv[2] ?? 'real';
 const filter = process.argv[3] ? new RegExp(process.argv[3], 'i') : null;

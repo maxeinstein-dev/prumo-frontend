@@ -73,6 +73,7 @@ await import('./t66_capture_installments.mts');
 await import('./t67_investments.mts');
 await import('./t68_goal_positions.mts');
 await import('./t69_prumo_rename.mts');
+await import('./t25_generic_import.mts');
 // Suites that no runner called before the tests moved into the repository.
 await import('./t30_bills_checklist.mts');
 await import('./t43_early_discount.mts');

@@ -218,8 +218,8 @@ class ApiClient {
   /**
    * POST request
    */
-  async post<T>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
-    const response = await this.axiosInstance.post<ApiResponse<T>>(endpoint, body);
+  async post<T>(endpoint: string, body?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    const response = await this.axiosInstance.post<ApiResponse<T>>(endpoint, body, config);
     return response.data;
   }
 
