@@ -28,3 +28,8 @@ dist-ssr
 .env.local
 .env.production.local
 
+
+# Bundles built by the dialog simulation (tests/dialog-sim)
+tests/dialog-sim/out/
+tests/dialog-sim/entry.*.tsx
+tests/_run_phase4.mts
