@@ -50,7 +50,7 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
     };
   }
 
-  const MP = { id: 'acc-mp', householdId: 'h1', name: 'Mercado Pago', type: 'CHECKING', totalBalance: 3665.04, balance: 3665.04 };
+  const MP = { id: 'acc-mp', householdId: 'h1', name: 'Mercado Pago', type: 'CHECKING', totalBalance: 4271.65, balance: 4271.65 };
   const OTHER = { id: 'acc-other', householdId: 'h1', name: 'Carteira', type: 'CASH', totalBalance: 50, balance: 50 };
 
   // ---- mount ------------------------------------------------------------------------------------------------
@@ -116,7 +116,7 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
     const server = createServer([MP]);
     await mount(server);
     assert.match(bodyText(), /Ajustar saldo de Mercado Pago/);
-    assert.match(bodyText(), /Saldo atual no Prumo:\s*R\$ 3665\.04/);
+    assert.match(bodyText(), /Saldo atual no Prumo:\s*R\$ 4271\.65/);
     assert.equal(byId('adjust-target').value, '');
     assert.equal(byId('adjust-date').value, TODAY);
     assert.equal(byId('adjust-reason').value, 'Ajuste de saldo');
@@ -129,11 +129,11 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
   as('AJ2 the target is a currency mask in cents; the difference and the entry are shown; Confirm needs the checkbox', async () => {
     const server = createServer([MP]);
     await mount(server);
-    await typeInto(byId('adjust-target'), '380227');
-    assert.equal(byId('adjust-target').value, 'R$ 3.802,27');
-    assert.match(bodyText(), /Diferença:\s*\+R\$ 137\.23/);
-    assert.match(bodyText(), /Será criada uma entrada de R\$ 137\.23 em /);
-    assert.match(bodyText(), /o saldo passa a ser R\$ 3802\.27/);
+    await typeInto(byId('adjust-target'), '438902');
+    assert.equal(byId('adjust-target').value, 'R$ 4.389,02');
+    assert.match(bodyText(), /Diferença:\s*\+R\$ 117.37/);
+    assert.match(bodyText(), /Será criada uma entrada de R\$ 117.37 em /);
+    assert.match(bodyText(), /o saldo passa a ser R\$ 4389\.02/);
     assert.match(bodyText(), /Nenhuma transação ou pagamento que já existe é alterado/);
     assert.equal(submitBtn().disabled, true, 'not confirmed yet');
     await click(confirmBox());
@@ -159,15 +159,15 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
     const server = createServer([MP]);
     await mount(server);
     await click(btn(/^Usar \d\d\/12\/\d{4}$/));
-    await fill('380227');
+    await fill('438902');
     await click(submitBtn());
     await flush(20);
     assert.equal(adjustCalls().length, 1);
     assert.equal(adjustCalls()[0].url, '/accounts/acc-mp/adjust-balance');
-    assert.deepEqual(adjustCalls()[0].payload, { newBalance: 3802.27, date: OPENING, reason: 'Saldo inicial' });
-    assert.deepEqual(server.state.entries.map((e) => [e.type, e.amount, e.date]), [['INCOME', 137.23, OPENING]], 'the fake server built one dated INCOME');
+    assert.deepEqual(adjustCalls()[0].payload, { newBalance: 4389.02, date: OPENING, reason: 'Saldo inicial' });
+    assert.deepEqual(server.state.entries.map((e) => [e.type, e.amount, e.date]), [['INCOME', 117.37, OPENING]], 'the fake server built one dated INCOME');
     assert.equal(toasts().at(-1)[0], 'success');
-    assert.match(toasts().at(-1)[1], /uma entrada de R\$ 137\.23 em 31\/12\/\d{4}/);
+    assert.match(toasts().at(-1)[1], /uma entrada de R\$ 117.37 em 31\/12\/\d{4}/);
     assert.equal(current.closed, 1);
     assert.equal(current.qc.getQueryState(['accounts'])?.isInvalidated ?? true, true);
   });
@@ -176,19 +176,19 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
     const server = createServer([MP]);
     await mount(server);
     await fill('100000');
-    assert.match(bodyText(), /Diferença:\s*-R\$ 2665\.04/);
-    assert.match(bodyText(), /uma saída de R\$ 2665\.04/);
+    assert.match(bodyText(), /Diferença:\s*-R\$ 3271.65/);
+    assert.match(bodyText(), /uma saída de R\$ 3271.65/);
     await click(submitBtn());
     await flush(20);
     assert.deepEqual(adjustCalls()[0].payload, { newBalance: 1000, date: TODAY, reason: 'Ajuste de saldo' });
     assert.equal(server.state.entries[0].type, 'EXPENSE');
-    assert.equal(server.state.entries[0].amount, 2665.04, 'a positive amount');
+    assert.equal(server.state.entries[0].amount, 3271.65, 'a positive amount');
   });
 
   as('AJ6 the same balance is refused in the dialog (nothing to adjust), no confirmation, no request', async () => {
     const server = createServer([MP]);
     await mount(server);
-    await typeInto(byId('adjust-target'), '366504');
+    await typeInto(byId('adjust-target'), '427165');
     assert.match(alerts().join(' '), /não há o que ajustar/);
     assert.equal(confirmBox().disabled, true);
     assert.equal(submitBtn().disabled, true);
@@ -200,7 +200,7 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
     await mount(server);
     assert.equal(byId('adjust-date').max, TODAY);
     const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-    await fill('380227', { date: iso(tomorrow), confirm: false });
+    await fill('438902', { date: iso(tomorrow), confirm: false });
     assert.match(alerts().join(' '), /não pode ser no futuro/);
     assert.equal(confirmBox().disabled, true);
     await typeInto(byId('adjust-date'), '');
@@ -215,9 +215,9 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
   as('AJ8 editing anything after confirming takes the confirmation back (what is confirmed is what is sent)', async () => {
     const server = createServer([MP]);
     await mount(server);
-    await fill('380227');
+    await fill('438902');
     assert.equal(submitBtn().disabled, false);
-    await typeInto(byId('adjust-target'), 'R$ 3.802,270');
+    await typeInto(byId('adjust-target'), 'R$ 4.389,020');
     assert.equal(confirmBox().checked, false);
     assert.equal(submitBtn().disabled, true);
     await click(confirmBox());
@@ -232,7 +232,7 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
   as('AJ9 double submit: while the request is in flight a second click sends nothing, and ESC / backdrop / Cancelar do not close', async () => {
     const server = createServer([MP]);
     await mount(server);
-    await fill('380227');
+    await fill('438902');
     server.hold();
     await click(submitBtn());
     await click(submitBtn());
@@ -254,7 +254,7 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
   as('AJ10 a server error keeps the dialog open with the message and a toast; a retry is one more request', async () => {
     const server = createServer([MP]);
     await mount(server);
-    await fill('380227');
+    await fill('438902');
     server.failNext('date cannot be in the future');
     await click(submitBtn());
     await flush(20);
@@ -271,8 +271,8 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
   as('AJ11 the server answering "already at that balance" (adjustment null): honest toast, no entry, dialog closes', async () => {
     const server = createServer([MP]);
     await mount(server);
-    await fill('380227');
-    server.state.accounts[0].totalBalance = 3802.27; // another tab applied the same adjustment first
+    await fill('438902');
+    server.state.accounts[0].totalBalance = 4389.02; // another tab applied the same adjustment first
     await click(submitBtn());
     await flush(20);
     assert.equal(server.state.entries.length, 0);
@@ -283,7 +283,7 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
   as('AJ12 latest wins: an answer that arrives after the dialog was reopened for another account changes nothing on screen', async () => {
     const server = createServer([MP, OTHER]);
     await mount(server);
-    await fill('380227');
+    await fill('438902');
     server.hold();
     await click(submitBtn());
     await current.set({ open: false });
@@ -302,7 +302,7 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
   as('AJ13 every opening starts blank and unconfirmed (nothing typed survives a close)', async () => {
     const server = createServer([MP]);
     await mount(server);
-    await fill('380227', { reason: 'Algo' });
+    await fill('438902', { reason: 'Algo' });
     await current.set({ open: false });
     await current.set({ open: true });
     assert.equal(byId('adjust-target').value, '');
@@ -314,7 +314,7 @@ export function registerAdjustScenarios({ B, w, fake, scenario, flush, all, btn,
   as('AJ14 StrictMode: still one request per submit', async () => {
     const server = createServer([MP]);
     await mount(server, { strict: true });
-    await fill('380227');
+    await fill('438902');
     await click(submitBtn());
     await click(submitBtn());
     await flush(20);

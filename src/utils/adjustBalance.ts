@@ -12,7 +12,7 @@ export const OPENING_BALANCE_REASON = 'Saldo inicial';
 export interface MaskedMoney {
   /** Typed amount in cents (negative when the text has a minus sign); null while no digit was typed. */
   cents: number | null;
-  /** What the field shows: "R$ 3.802,27", "-R$ 10,00", "-" (sign only) or "". */
+  /** What the field shows: "R$ 4.389,02", "-R$ 10,00", "-" (sign only) or "". */
   display: string;
 }
 
@@ -32,7 +32,7 @@ export function centsToMaskedText(cents: number): string {
   return maskMoneyInput(`${cents < 0 ? '-' : ''}${Math.abs(Math.trunc(cents))}`).display;
 }
 
-/** Reais from the API to integer cents (rounds the float noise of 3665.04 * 100). */
+/** Reais from the API to integer cents (rounds the float noise of 4271.65 * 100). */
 export function reaisToCents(value: number): number {
   return Number.isFinite(value) ? Math.round(value * 100 + (value < 0 ? -1e-6 : 1e-6)) : 0;
 }
@@ -113,7 +113,7 @@ export function buildAdjustBody(input: AdjustInput, now: Date = new Date()): Adj
   };
 }
 
-/** What the entry will be, in words: "uma entrada de R$ 137,23" / "uma saída de R$ 10,00". */
+/** What the entry will be, in words: "uma entrada de R$ 117,37" / "uma saída de R$ 10,00". */
 export function describeAdjustment(differenceCents: number, formatMoney: (cents: number) => string): string {
   return `${differenceCents > 0 ? 'uma entrada' : 'uma saída'} de ${formatMoney(Math.abs(differenceCents))}`;
 }
