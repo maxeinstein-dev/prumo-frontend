@@ -7,7 +7,7 @@ import { clearLocalToken } from './localToken';
 
 export type AuthMode = 'local' | 'firebase';
 
-export const LOCAL_USER_KEY = 'recta_user';
+export const LOCAL_USER_KEY = 'prumo_user';
 
 /** Why a local sign-in or sign-up failed, in terms the login page can translate. */
 export type LocalAuthErrorCode =

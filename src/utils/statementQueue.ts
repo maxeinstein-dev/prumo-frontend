@@ -11,11 +11,11 @@ export function statementConfirmRows(preview: Pick<ImportPreview, 'rows'>): Conf
 }
 
 export const STATEMENT_EMPTY_FILE = 'Nenhuma transação encontrada no arquivo.';
-export const STATEMENT_NOTHING_NEW = 'Nenhuma transação nova neste arquivo: todas as linhas já estão no Recta.';
+export const STATEMENT_NOTHING_NEW = 'Nenhuma transação nova neste arquivo: todas as linhas já estão no Prumo.';
 
 export type StatementDefaultPlan =
   | { ok: true; rows: ConfirmImportRow[] }
-  /** Every row is already in Recta: nothing to import (left out). */
+  /** Every row is already in Prumo: nothing to import (left out). */
   | { ok: false; code: 'nothing-new'; reason: string }
   /** No row at all: the file is empty or could not be parsed (stops the loop). */
   | { ok: false; code: 'empty'; reason: string };
@@ -28,7 +28,7 @@ export function planStatementDefaultApply(preview: Pick<ImportPreview, 'rows'>):
   return { ok: true, rows };
 }
 
-export const STATEMENT_NOTHING_NEW_NOTE = 'Este arquivo não tem novidades: todas as linhas já estão no Recta.';
+export const STATEMENT_NOTHING_NEW_NOTE = 'Este arquivo não tem novidades: todas as linhas já estão no Prumo.';
 export const STATEMENT_NOTHING_NEW_QUEUE_NOTE = 'Sem novidades: nada a importar';
 
 export interface StatementQueueControls {
@@ -39,7 +39,7 @@ export interface StatementQueueControls {
 }
 
 /**
- * What the buttons of the statement queue do for the file on screen. A file whose rows are all in Recta never stalls the
+ * What the buttons of the statement queue do for the file on screen. A file whose rows are all in Prumo never stalls the
  * queue: "Continuar para o próximo" and "aplicar o padrão nas restantes" stay available. A file with no row at all (empty,
  * unparseable) or a failed confirm keeps them disabled, with the reason as text.
  */

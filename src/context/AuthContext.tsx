@@ -39,7 +39,7 @@ export const useAuth = (): AuthContextType => useContext(AuthContext);
  * C3 (AUTH_MODE=local): resolução do modo via módulo canônico do lane C1
  * (`src/config/authMode.ts` — GET /auth/config com fallback de env).
  * Token local via helpers do lane C2 (`src/utils/localToken.ts`, mesma chave
- * `recta_token` lida pelo interceptor de utils/api.ts).
+ * `prumo_token` lida pelo interceptor de utils/api.ts).
  */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 

@@ -98,7 +98,7 @@ const CaptureReaderCard = ({ householdId, canEdit }: CaptureReaderCardProps) => 
         Leitura das notificações
       </h2>
       <p className={`text-sm font-light mb-4 ${MUTED_CLS}`}>
-        O Recta lê valor, tipo, estabelecimento e final do cartão do texto da notificação. Avisos e promoções são
+        O Prumo lê valor, tipo, estabelecimento e final do cartão do texto da notificação. Avisos e promoções são
         descartados sozinhos e podem ser restaurados.
       </p>
 

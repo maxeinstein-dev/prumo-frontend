@@ -431,7 +431,7 @@ export function useCreateSettlement() {
   });
 }
 
-export const SETTLEMENT_ACCOUNT_STORAGE_KEY = 'recta.people.settlementAccount';
+export const SETTLEMENT_ACCOUNT_STORAGE_KEY = 'prumo.people.settlementAccount';
 
 /** The account last used for a settlement in this household. Never throws. */
 export function loadSettlementAccount(householdId: string | null | undefined): string {

@@ -40,7 +40,7 @@ const VALUE_CLS = 'font-light text-gray-900 dark:text-white text-right';
 
 /**
  * Diagnostics of the Android notification reader: permission, battery optimization, the send queue, and the link of this
- * phone to the Recta account. Renders nothing outside the native app.
+ * phone to the Prumo account. Renders nothing outside the native app.
  */
 const CaptureDiagnostics = () => {
   if (!isNativeApp()) return null;

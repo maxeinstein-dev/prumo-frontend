@@ -41,7 +41,7 @@ export function rememberRecent(list: readonly string[], value: string, limit: nu
 
 /** Storage key: each household, each type (expense or income) and each kind (category or account) apart. */
 export function recentStorageKey(householdId: string, type: 'EXPENSE' | 'INCOME', kind: 'category' | 'account'): string {
-  return `recta.addSheet.recent.${householdId}.${type}.${kind}`;
+  return `prumo.addSheet.recent.${householdId}.${type}.${kind}`;
 }
 
 /** The saved list; a broken or blocked storage gives an empty list and never throws. */

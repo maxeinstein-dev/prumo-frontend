@@ -185,7 +185,7 @@ interface PreviewHeaderProps {
   monthDisabled: boolean; currency: CurrencyCode; onMonthInputChange: (value: string) => void; onApplyMonth: () => void;
 }
 
-const RECTA_TOTAL_HINT =
+const PRUMO_TOTAL_HINT =
   'Linhas já conciliadas, linhas da planilha e parcelas futuras que as propostas apontam (marcadas ou não), novas e pares marcados, e as transações do mês sem par no OFX. Pagamentos ficam fora, como no total do OFX.';
 
 const CLOSING_TOTAL_HINT =
@@ -256,7 +256,7 @@ const PreviewHeader = ({
   const canApply = !monthDisabled && !!parseMonthInput(monthInput) && monthInput !== preview.monthKey;
   // With the server's closing the total in the card and the difference come from it (the period count by date); without it, from the client's estimate.
   const diff = closing ? closing.deltaCents : totals.differenceCents;
-  const rectaCents = closing ? closing.recordedCents : totals.rectaCents;
+  const prumoCents = closing ? closing.recordedCents : totals.prumoCents;
   return (
     <div className="space-y-3">
       <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
@@ -280,9 +280,9 @@ const PreviewHeader = ({
           <dd className="font-medium text-gray-900 dark:text-white">{money(totals.ofxCents, currency)}</dd>
         </div>
         <div className="min-w-0">
-          <dt className={`text-xs ${MUTED_CLS}`} title={closing ? CLOSING_TOTAL_HINT : RECTA_TOTAL_HINT}>Total no Recta após importar</dt>
-          <dd className="font-medium text-gray-900 dark:text-white" title={closing ? CLOSING_TOTAL_HINT : RECTA_TOTAL_HINT}>
-            {money(rectaCents, currency)}
+          <dt className={`text-xs ${MUTED_CLS}`} title={closing ? CLOSING_TOTAL_HINT : PRUMO_TOTAL_HINT}>Total no Prumo após importar</dt>
+          <dd className="font-medium text-gray-900 dark:text-white" title={closing ? CLOSING_TOTAL_HINT : PRUMO_TOTAL_HINT}>
+            {money(prumoCents, currency)}
             {diff === 0 ? (
               <span className="block text-xs font-normal text-green-700 dark:text-green-400">igual ao OFX</span>
             ) : (
@@ -554,7 +554,7 @@ const NewLinesNoticeBox = ({ notice, currency }: { notice: CardOfxNewLinesNotice
     <p>
       Sobram no OFX {countLabel(notice.ofxLines, 'lançamento', 'lançamentos')} ({money(notice.ofxCents, currency)}); na planilha, sem par no
       OFX, {countLabel(notice.sheetRows, 'transação', 'transações')} ({money(notice.sheetCents, currency)}). Marque as novas que faltam no
-      Recta antes de confirmar.
+      Prumo antes de confirmar.
     </p>
   </div>
 );
@@ -577,7 +577,7 @@ const CategoryTable = ({ entries, choices, customCategories, disabled, onChange 
               <th className={TH_CLS}>Comerciante</th>
               <th className={TH_CLS}>Tipo</th>
               <th className={`${TH_CLS} text-right`}>Linhas</th>
-              <th className={TH_CLS}>Categoria no Recta</th>
+              <th className={TH_CLS}>Categoria no Prumo</th>
             </tr>
           </thead>
           <tbody className={TBODY_CLS}>
@@ -621,7 +621,7 @@ const CategoryTable = ({ entries, choices, customCategories, disabled, onChange 
   );
 };
 
-/** Lines already in Recta: collapsed (a re-import lists every line here). */
+/** Lines already in Prumo: collapsed (a re-import lists every line here). */
 const ReconciledSection = ({ lines, currency }: { lines: CardOfxLine[]; currency: CurrencyCode }) => {
   const [expanded, setExpanded] = useState(false);
   if (lines.length === 0) return null;
@@ -633,7 +633,7 @@ const ReconciledSection = ({ lines, currency }: { lines: CardOfxLine[]; currency
         <Icon className="h-4 w-4" aria-hidden="true" />
         Já conciliadas ({lines.length})
       </button>
-      <p className={`text-xs ${MUTED_CLS}`}>Já estão no Recta: nada muda nelas.</p>
+      <p className={`text-xs ${MUTED_CLS}`}>Já estão no Prumo: nada muda nelas.</p>
       {expanded && <div className="rounded-md border border-gray-200 dark:border-gray-800 p-3 text-sm"><LineList lines={lines} currency={currency} /></div>}
     </section>
   );
@@ -689,7 +689,7 @@ const PaymentBlock = ({ payment, choice, accounts, problem, disabled, currency, 
       <p className="text-sm text-gray-900 dark:text-white">No OFX: <strong className="font-medium">{amount}</strong> em {when} (Pagamento recebido).</p>
       {recorded && (
         <p className={`text-sm ${MUTED_CLS}`}>
-          Registrado no Recta: {formatCurrency(recorded.amount, currency)} em {fmtDate(recorded.date)}
+          Registrado no Prumo: {formatCurrency(recorded.amount, currency)} em {fmtDate(recorded.date)}
           {recorded.sourceAccountId ? `, da conta ${accountName(recorded.sourceAccountId)}` : ''}.
         </p>
       )}
@@ -1288,7 +1288,7 @@ const ImportCardOfxDialog = ({ open, onClose, accountId, householdId: householdI
         { sourceAccountId: queueSourceRef.current, savedChoices: loadSavedCategoryChoices(data.householdId || householdId) },
       );
       if (!plan.ok) {
-        if (plan.code === 'nothing-to-do') return { ok: true, upToDate: true, note: 'Nada a importar: já está no Recta' };
+        if (plan.code === 'nothing-to-do') return { ok: true, upToDate: true, note: 'Nada a importar: já está no Prumo' };
         return { ok: false, written: false, reason: plan.reason };
       }
       confirmingRef.current = true;
