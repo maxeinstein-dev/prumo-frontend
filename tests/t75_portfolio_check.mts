@@ -21,16 +21,16 @@ const account = (stocks: unknown[], over: Record<string, unknown> = {}) => ({
   blocked: null,
   itemId: 'item-x',
   stocks,
-  others: { bankCents: 1708853, prumoCents: 1709978 },
-  cash: { bankCents: 966, prumoCents: 966 },
-  total: { bankCents: 1795042, prumoCents: 1798481, diffCents: -3439 },
+  others: { bankCents: 1534210, prumoCents: 1535335 },
+  cash: { bankCents: 1210, prumoCents: 1210 },
+  total: { bankCents: 1622500, prumoCents: 1625939, diffCents: -3439 },
   ...over,
 });
 
 console.log('\n[portfolio check] utils/openFinancePortfolio.ts, homeMobile warningStrips');
 
 check('warningStrips: no strip when every quantity matches, however the values differ', () => {
-  const same = account([stock('AAAA11', 'same', 47, 47, 37647, 39245)]);
+  const same = account([stock('AAAA11', 'same', 53, 53, 41210, 42808)]);
   assert.deepEqual(H.warningStrips({ captures: 0, negativeDate: null, portfolios: [same] }), []);
 });
 
@@ -53,15 +53,15 @@ check('warningStrips: one asset only at the bank / only in Prumo; a blocked conn
 });
 
 check('portfolioRows: one row per asset, then fixed income and funds, cash and the total, with the difference bank - Prumo', () => {
-  const rows = P.portfolioRows(account([stock('AAAA11', 'same', 47, 47, 37647, 39245), stock('BBBB11', 'quantity', 47, 45, 100, 90)]));
+  const rows = P.portfolioRows(account([stock('AAAA11', 'same', 53, 53, 41210, 42808), stock('BBBB11', 'quantity', 47, 45, 100, 90)]));
   assert.deepEqual(
     rows.map((r: { label: string; bankCents: number | null; prumoCents: number | null; diffCents: number | null; note: string }) => [r.label, r.bankCents, r.prumoCents, r.diffCents, r.note]),
     [
-      ['AAAA11', 37647, 39245, -1598, '47 cotas'],
+      ['AAAA11', 41210, 42808, -1598, '53 cotas'],
       ['BBBB11', 100, 90, 10, 'Quantidade diferente: 47 no banco, 45 no Prumo'],
-      ['Renda fixa e fundos', 1708853, 1709978, -1125, ''],
-      ['Caixa', 966, 966, 0, ''],
-      ['Total', 1795042, 1798481, -3439, ''],
+      ['Renda fixa e fundos', 1534210, 1535335, -1125, ''],
+      ['Caixa', 1210, 1210, 0, ''],
+      ['Total', 1622500, 1625939, -3439, ''],
     ],
   );
 });
