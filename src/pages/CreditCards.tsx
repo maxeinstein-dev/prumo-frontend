@@ -67,6 +67,7 @@ import { useIsMobileShell } from "../hooks/useIsMobileShell";
 import { useToday } from "../hooks/useToday";
 import { useSelectedMonth } from "../context/SelectedMonthContext";
 import MobileCreditCards from "../components/credit-cards/MobileCreditCards";
+import CardBankCheck from "../components/credit-cards/CardBankCheck";
 import { addMonthKey, invoiceMemo, monthStartOf, openInvoiceMonthKey, openingInvoiceMonth } from "../utils/cardsMobile";
 
 const CreditCards = () => {
@@ -1131,6 +1132,9 @@ const CreditCards = () => {
           className="mb-6"
         />
       )}
+
+      {/* Conferência com o banco (Open Finance): só aparece para cartão vinculado. */}
+      {selectedAccountId && <CardBankCheck accountId={selectedAccountId} className="mb-6" />}
 
       {selectedAccount && cardDetails ? (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

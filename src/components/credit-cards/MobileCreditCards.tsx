@@ -37,6 +37,7 @@ import type { StatementView } from '../../utils/invoiceStatement';
 import { TransactionType } from '../../lib/enums';
 import { TransactionActionsMenu } from '../TransactionActionsMenu';
 import { CreditCardStatementPanel } from './CreditCardStatementPanel';
+import CardBankCheck from './CardBankCheck';
 import { CreditCardsSummary } from '../CreditCardsSummary';
 import { useBackLayer } from '../../hooks/useBackLayer';
 
@@ -338,6 +339,9 @@ export default function MobileCreditCards(props: MobileCreditCardsProps) {
               </dl>
             </section>
           )}
+
+          {/* Conferência com o banco (Open Finance): só aparece para cartão vinculado. */}
+          {selectedAccount?.id && <CardBankCheck accountId={selectedAccount.id} />}
 
           {/* Compras da fatura: a mesma lista e as mesmas ações do computador. */}
           <section aria-label="Compras da fatura" className={CARD_BLOCK}>

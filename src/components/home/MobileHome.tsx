@@ -6,7 +6,7 @@ import { useSelectedMonth } from '../../context/SelectedMonthContext';
 import { useDefaultHousehold } from '../../hooks/useDefaultHousehold';
 import { useAccounts } from '../../hooks/api/useAccounts';
 import { useCapturesCount } from '../../hooks/api/useCaptures';
-import { useOpenFinanceBalances, useOpenFinancePortfolio } from '../../hooks/api/useOpenFinance';
+import { useOpenFinanceBalances, useOpenFinanceCards, useOpenFinancePortfolio } from '../../hooks/api/useOpenFinance';
 import { useDashboardOverview, useTransactions } from '../../hooks/api/useTransactions';
 import { useCashFlow } from '../../hooks/api/useCashFlow';
 import SpendableCard from '../cashflow/SpendableCard';
@@ -132,7 +132,14 @@ export default function MobileHome() {
   const negativeDate = useMemo(() => (data ? firstNegativeDate(buildDailySeries(data)) : null), [data]);
   const balances = useOpenFinanceBalances(householdId ?? undefined);
   const portfolios = useOpenFinancePortfolio(householdId ?? undefined);
-  const strips = warningStrips({ captures: captures.data ?? 0, negativeDate, balances: balances.data ?? [], portfolios: portfolios.data ?? [] });
+  const cardChecks = useOpenFinanceCards(householdId ?? undefined);
+  const strips = warningStrips({
+    captures: captures.data ?? 0,
+    negativeDate,
+    balances: balances.data ?? [],
+    portfolios: portfolios.data ?? [],
+    cards: cardChecks.data ?? [],
+  });
 
   // The leftover is a forecast: what is posted in the month plus what the cash flow still projects for it (recurrences,
   // payroll, invoices). The current month reuses the 30-day answer above; a future month asks the shortest period that

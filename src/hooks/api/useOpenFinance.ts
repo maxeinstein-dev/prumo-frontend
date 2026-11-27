@@ -5,6 +5,7 @@ import { buildLinksBody, type LinksDraft, type LinksItem } from '../../utils/ope
 import { buildSavingsBody, type SavingsRow, type SavingsServer } from '../../utils/openFinanceSavings';
 import type { BalanceGap } from '../../utils/homeMobile';
 import type { PortfolioCheck } from '../../utils/openFinancePortfolio';
+import type { CardCheck } from '../../utils/openFinanceCards';
 
 /** The envelope apiClient returns is the response body: { success, data }. */
 const bodyOf = <T>(response: unknown): { data?: T } => (response ?? {}) as { data?: T };
@@ -133,6 +134,26 @@ export function useOpenFinancePortfolio(householdId: string | undefined) {
     queryFn: async () => {
       const body = bodyOf<{ accounts: PortfolioCheck[] }>(await apiClient.get('/open-finance/investments', { householdId }));
       return body.data?.accounts ?? [];
+    },
+    staleTime: 12 * 60 * 60 * 1000,
+    gcTime: 12 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+}
+
+/**
+ * GET /open-finance/cards: the card bills at the bank against the Prumo invoices (P25, card lot). It asks Pluggy, which
+ * updates once a day, so the answer is kept for 12 hours instead of asking on every visit.
+ */
+export function useOpenFinanceCards(householdId: string | undefined) {
+  const { currentUser } = useAuth();
+  return useQuery({
+    queryKey: ['open-finance', 'cards', householdId ?? null],
+    enabled: !!currentUser && !!householdId,
+    queryFn: async () => {
+      const body = bodyOf<{ cards: CardCheck[] }>(await apiClient.get('/open-finance/cards', { householdId }));
+      return body.data?.cards ?? [];
     },
     staleTime: 12 * 60 * 60 * 1000,
     gcTime: 12 * 60 * 60 * 1000,
