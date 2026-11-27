@@ -55,6 +55,7 @@ import CaptureDiagnostics from "../components/capture/CaptureDiagnostics";
 import CaptureRulesCard from "../components/capture/CaptureRulesCard";
 import CaptureReaderCard from "../components/capture/CaptureReaderCard";
 import CaptureDevicesCard from "../components/capture/CaptureDevicesCard";
+import OpenFinanceCard from "../components/openFinance/OpenFinanceCard";
 import { isNativeApp } from "../native/captureReader";
 import { canWritePeople } from "../utils/people";
 import {
@@ -607,6 +608,9 @@ const SettingsPage = () => {
       <CaptureRulesCard householdId={householdId ?? undefined} canEdit={canWritePeople(household)} />
       <CaptureReaderCard householdId={householdId ?? undefined} canEdit={canWritePeople(household)} />
       <CaptureDevicesCard />
+
+      {/* Open Finance (Meu Pluggy): qual conta do Prumo recebe cada conta do banco (P25 L4) */}
+      <OpenFinanceCard householdId={householdId ?? undefined} canEdit={canWritePeople(household)} />
 
       {/* Categorias: padrão (somente leitura) e personalizadas (criar, renomear, unir, excluir) */}
       <CategoryManager householdId={householdId ?? undefined} canEdit={canWritePeople(household)} />
