@@ -5,6 +5,7 @@ import { PageHeader } from '../components/PageHeader';
 import LoadFailureNotice from '../components/LoadFailureNotice';
 import PositionCard, { TONE_CLS, signedMoney } from '../components/investments/PositionCard';
 import PositionDetailView from '../components/investments/PositionDetailView';
+import PortfolioCheckCard from '../components/investments/PortfolioCheckCard';
 import { NewPositionDialog } from '../components/investments/InvestmentDialogs';
 import { fmtDate, BTN_PRIMARY, INPUT_CLS, LABEL_CLS } from '../components/people/ui';
 import { useI18n } from '../context/I18nContext';
@@ -186,6 +187,8 @@ function AccountOverview({ accountId, goals }: { accountId: string; goals: GoalR
       ))}
 
       {hasFixed && <p className="px-1 text-xs text-rc-ink3">{invText(t, 'invGrossNotice')}</p>}
+
+      <PortfolioCheckCard accountId={accountId} />
 
       {closed.length > 0 && (
         <details className={CARD}>

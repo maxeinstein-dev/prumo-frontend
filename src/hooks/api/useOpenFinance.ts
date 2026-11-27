@@ -4,6 +4,7 @@ import { apiClient } from '../../utils/api';
 import { buildLinksBody, type LinksDraft, type LinksItem } from '../../utils/openFinanceLinks';
 import { buildSavingsBody, type SavingsRow, type SavingsServer } from '../../utils/openFinanceSavings';
 import type { BalanceGap } from '../../utils/homeMobile';
+import type { PortfolioCheck } from '../../utils/openFinancePortfolio';
 
 /** The envelope apiClient returns is the response body: { success, data }. */
 const bodyOf = <T>(response: unknown): { data?: T } => (response ?? {}) as { data?: T };
@@ -115,6 +116,26 @@ export function useOpenFinanceBalances(householdId: string | undefined) {
       const body = bodyOf<{ balances: BalanceGap[] }>(await apiClient.get('/open-finance/balances', { householdId }));
       return body.data?.balances ?? [];
     },
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+}
+
+/**
+ * GET /open-finance/investments: the broker portfolio from Open Finance against P21 (P25 L5). It asks Pluggy, which
+ * updates once a day, so the answer is kept for 12 hours instead of asking on every visit.
+ */
+export function useOpenFinancePortfolio(householdId: string | undefined) {
+  const { currentUser } = useAuth();
+  return useQuery({
+    queryKey: ['open-finance', 'investments', householdId ?? null],
+    enabled: !!currentUser && !!householdId,
+    queryFn: async () => {
+      const body = bodyOf<{ accounts: PortfolioCheck[] }>(await apiClient.get('/open-finance/investments', { householdId }));
+      return body.data?.accounts ?? [];
+    },
+    staleTime: 12 * 60 * 60 * 1000,
+    gcTime: 12 * 60 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: false,
   });
