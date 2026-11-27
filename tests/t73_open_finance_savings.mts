@@ -12,7 +12,7 @@ const S: any = await import(pathToFileURL(S_PATH).href);
 const I: any = await import(pathToFileURL(I_PATH).href);
 
 const SERVER = [
-  { name: 'Cofrinho Azul', aliases: ['Reserva Antiga'], inPrumo: true, approxCents: 40140, asOf: '2026-11-27' },
+  { name: 'Cofrinho Azul', aliases: ['Reserva Antiga'], inPrumo: true, approxCents: 51230, asOf: '2026-11-27' },
   { name: 'Cofrinho Pai', aliases: [], inPrumo: false, approxCents: null, asOf: null },
 ];
 
@@ -24,19 +24,19 @@ check('appLabel: Open Finance drafts show as "Open Finance"', () => {
 
 check('draftFromSavings: rows the screen edits (aliases joined, balance in reais with comma, empty when unknown)', () => {
   assert.deepEqual(S.draftFromSavings(SERVER), [
-    { name: 'Cofrinho Azul', aliases: 'Reserva Antiga', inPrumo: true, balance: '401,40', asOf: '2026-11-27' },
+    { name: 'Cofrinho Azul', aliases: 'Reserva Antiga', inPrumo: true, balance: '512,30', asOf: '2026-11-27' },
     { name: 'Cofrinho Pai', aliases: '', inPrumo: false, balance: '', asOf: '' },
   ]);
 });
 
 check('buildSavingsBody: back to the PUT body (aliases split, balance in reais, empty = null)', () => {
   const rows = [
-    { name: ' Cofrinho Azul ', aliases: 'Reserva Antiga, , Outro Nome ', inPrumo: true, balance: '45.136,06', asOf: '2026-11-26' },
+    { name: ' Cofrinho Azul ', aliases: 'Reserva Antiga, , Outro Nome ', inPrumo: true, balance: '38.250,75', asOf: '2026-11-26' },
     { name: 'Cofrinho Pai', aliases: '', inPrumo: false, balance: '', asOf: '' },
   ];
   assert.deepEqual(S.buildSavingsBody(rows), {
     savings: [
-      { name: 'Cofrinho Azul', aliases: ['Reserva Antiga', 'Outro Nome'], inPrumo: true, approxBalance: 45136.06, balanceAsOf: '2026-11-26' },
+      { name: 'Cofrinho Azul', aliases: ['Reserva Antiga', 'Outro Nome'], inPrumo: true, approxBalance: 38250.75, balanceAsOf: '2026-11-26' },
       { name: 'Cofrinho Pai', aliases: [], inPrumo: false, approxBalance: null, balanceAsOf: null },
     ],
   });

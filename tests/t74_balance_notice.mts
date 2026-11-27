@@ -11,8 +11,8 @@ const H: any = await import(pathToFileURL(path).href);
 const gap = (over: Record<string, unknown> = {}) => ({
   prumoAccountId: 'acc-1',
   accountName: 'Carteira Exemplo',
-  bankCents: 41140,
-  prumoCents: 40140,
+  bankCents: 52230,
+  prumoCents: 51230,
   diffCents: 1000,
   estimated: false,
   toleranceCents: 0,
@@ -46,8 +46,8 @@ check('warningStrips: an estimated bank balance says so; the strips come after t
 });
 
 check('warningStrips: drafts waiting in the box are shown beside the difference (27/11/2026)', () => {
-  const [income] = H.warningStrips({ captures: 0, negativeDate: null, balances: [gap({ diffCents: 75600, pendingCents: 75000 })] });
-  assert.equal(income.subtitle, 'O banco tem R$ 756,00 a mais que o Prumo · R$ 750,00 em rascunhos na caixa');
+  const [income] = H.warningStrips({ captures: 0, negativeDate: null, balances: [gap({ diffCents: 64000, pendingCents: 63500 })] });
+  assert.equal(income.subtitle, 'O banco tem R$ 640,00 a mais que o Prumo · R$ 635,00 em rascunhos na caixa');
   const [expense] = H.warningStrips({ captures: 0, negativeDate: null, balances: [gap({ diffCents: -600, pendingCents: -600 })] });
   assert.equal(expense.subtitle, 'O banco tem R$ 6,00 a menos que o Prumo · R$ 6,00 em rascunhos na caixa');
   const [none] = H.warningStrips({ captures: 0, negativeDate: null, balances: [gap({ pendingCents: 0 })] });

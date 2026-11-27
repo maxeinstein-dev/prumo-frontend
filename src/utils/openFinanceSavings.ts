@@ -22,7 +22,7 @@ export interface SavingsRow {
   /** Comma separated. */
   aliases: string;
   inPrumo: boolean;
-  /** Reais with comma ("401,40"); '' = unknown. */
+  /** Reais with comma ("512,30"); '' = unknown. */
   balance: string;
   /** 'YYYY-MM-DD'; '' = unknown. */
   asOf: string;
@@ -36,7 +36,7 @@ function centsToText(cents: number): string {
   return `${sign}${Math.floor(abs / 100)},${String(abs % 100).padStart(2, '0')}`;
 }
 
-/** "45.136,06" / "401,40" / "401.4" -> reais; null when it is not a number. */
+/** "38.250,75" / "512,30" / "512.3" -> reais; null when it is not a number. */
 function parseReais(text: string): number | null {
   const t = text.trim().replace(/\s/g, '');
   if (!t) return null;
