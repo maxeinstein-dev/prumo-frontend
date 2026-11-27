@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { apiClient } from '../../utils/api';
 import { buildLinksBody, type LinksDraft, type LinksItem } from '../../utils/openFinanceLinks';
+import { buildSavingsBody, type SavingsRow, type SavingsServer } from '../../utils/openFinanceSavings';
 
 /** The envelope apiClient returns is the response body: { success, data }. */
 const bodyOf = <T>(response: unknown): { data?: T } => (response ?? {}) as { data?: T };
@@ -72,5 +73,33 @@ export function useRemoveOpenFinanceItem(householdId: string | undefined) {
       await apiClient.delete(withHousehold(`/open-finance/items/${encodeURIComponent(itemId)}`, householdId));
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['open-finance'] }),
+  });
+}
+
+const savingsKey = (householdId: string | undefined) => ['open-finance', 'savings', householdId ?? null];
+
+/** GET /open-finance/savings: the savings (cofrinhos) register. Reads only the database (no Pluggy call). */
+export function useOpenFinanceSavings(householdId: string | undefined) {
+  const { currentUser } = useAuth();
+  return useQuery({
+    queryKey: savingsKey(householdId),
+    enabled: !!currentUser && !!householdId,
+    queryFn: async () => {
+      const body = bodyOf<{ savings: SavingsServer[] }>(await apiClient.get('/open-finance/savings', { householdId }));
+      return body.data?.savings ?? [];
+    },
+    refetchOnWindowFocus: false,
+  });
+}
+
+/** PUT /open-finance/savings: replaces the whole register; answers it as saved. */
+export function useSaveOpenFinanceSavings(householdId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (rows: SavingsRow[]) => {
+      const response = await apiClient.put(withHousehold('/open-finance/savings', householdId), buildSavingsBody(rows));
+      return bodyOf<{ savings: SavingsServer[] }>(response).data?.savings ?? [];
+    },
+    onSuccess: (savings) => queryClient.setQueryData(savingsKey(householdId), savings),
   });
 }
