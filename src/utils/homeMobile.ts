@@ -302,6 +302,8 @@ export interface BalanceGap {
   diffCents: number;
   estimated: boolean;
   alert: boolean;
+  /** Open Finance drafts of the account still waiting in the box (income +, expense -). */
+  pendingCents?: number;
 }
 
 /** "R$ 1.234,56" without the sign (the text says more or less). */
@@ -336,7 +338,9 @@ export function warningStrips(input: { captures: number; negativeDate: string | 
     strips.push({
       id: `balance:${gap.prumoAccountId}`,
       title: `${gap.accountName}: saldo diferente do banco`,
-      subtitle: `O banco tem ${brl(gap.diffCents)} a ${gap.diffCents > 0 ? 'mais' : 'menos'} que o Prumo${gap.estimated ? ' (com estimativa do cofrinho)' : ''}`,
+      subtitle:
+        `O banco tem ${brl(gap.diffCents)} a ${gap.diffCents > 0 ? 'mais' : 'menos'} que o Prumo${gap.estimated ? ' (com estimativa do cofrinho)' : ''}` +
+        (gap.pendingCents ? ` · ${brl(gap.pendingCents)} em rascunhos na caixa` : ''),
       to: '/app/accounts',
     });
   }

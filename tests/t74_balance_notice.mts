@@ -44,3 +44,12 @@ check('warningStrips: an estimated bank balance says so; the strips come after t
   assert.deepEqual(strips.map((s: { id: string }) => s.id), ['captures', 'balance:acc-1', 'negative']);
   assert.equal(strips[1].subtitle, 'O banco tem R$ 1.234,56 a mais que o Prumo (com estimativa do cofrinho)');
 });
+
+check('warningStrips: drafts waiting in the box are shown beside the difference (27/11/2026)', () => {
+  const [income] = H.warningStrips({ captures: 0, negativeDate: null, balances: [gap({ diffCents: 75600, pendingCents: 75000 })] });
+  assert.equal(income.subtitle, 'O banco tem R$ 756,00 a mais que o Prumo · R$ 750,00 em rascunhos na caixa');
+  const [expense] = H.warningStrips({ captures: 0, negativeDate: null, balances: [gap({ diffCents: -600, pendingCents: -600 })] });
+  assert.equal(expense.subtitle, 'O banco tem R$ 6,00 a menos que o Prumo · R$ 6,00 em rascunhos na caixa');
+  const [none] = H.warningStrips({ captures: 0, negativeDate: null, balances: [gap({ pendingCents: 0 })] });
+  assert.equal(none.subtitle, 'O banco tem R$ 10,00 a mais que o Prumo');
+});
