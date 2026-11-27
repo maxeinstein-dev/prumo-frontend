@@ -10,6 +10,7 @@ import { addDays, isDayKey, monthLabel, shortDate, toCents, type CashFlowEvent }
 import type { Bill } from './billsChecklist';
 import { reserveText } from './savingsGoalsPlan';
 import { mismatchText, portfolioMismatches, type PortfolioCheck } from './openFinancePortfolio';
+import { billDiffText, billLabel, cardMismatches, type CardCheck } from './openFinanceCards';
 
 /** Formats an amount given in whole cents (the screen passes its own currency formatter). */
 export type CentsFormatter = (cents: number) => string;
@@ -315,7 +316,7 @@ function brl(cents: number): string {
 }
 
 export interface WarningStrip {
-  id: 'captures' | 'negative' | `balance:${string}` | `portfolio:${string}`;
+  id: 'captures' | 'negative' | `balance:${string}` | `portfolio:${string}` | `card:${string}`;
   title: string;
   subtitle: string;
   /** Route the strip opens. */
@@ -328,6 +329,7 @@ export function warningStrips(input: {
   negativeDate: string | null;
   balances?: readonly BalanceGap[];
   portfolios?: readonly PortfolioCheck[];
+  cards?: readonly CardCheck[];
 }): WarningStrip[] {
   const strips: WarningStrip[] = [];
   const captures = Number.isFinite(input.captures) ? Math.floor(input.captures) : 0;
@@ -359,6 +361,18 @@ export function warningStrips(input: {
       title: `${check.accountName}: carteira diferente do banco`,
       subtitle: mismatchText(mismatches[0]) + (mismatches.length > 1 ? ` · e mais ${mismatches.length - 1}` : ''),
       to: `/app/investments/${check.prumoAccountId}`,
+    });
+  }
+  // P25 card lot: a closed bill that differs from the Prumo invoice by more than R$ 1.
+  for (const check of input.cards ?? []) {
+    const mismatches = cardMismatches(check);
+    if (mismatches.length === 0) continue;
+    const first = mismatches[0];
+    strips.push({
+      id: `card:${check.prumoAccountId}`,
+      title: `${check.accountName}: fatura diferente do banco`,
+      subtitle: `${billLabel(first)}: ${billDiffText(first.diffCents!)}` + (mismatches.length > 1 ? ` · e mais ${mismatches.length - 1}` : ''),
+      to: `/app/credit-cards?card=${encodeURIComponent(check.prumoAccountId)}${first.month ? `&month=${first.month}` : ''}`,
     });
   }
   if (isDayKey(input.negativeDate)) {
