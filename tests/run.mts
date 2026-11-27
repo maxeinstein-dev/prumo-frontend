@@ -79,6 +79,7 @@ await import('./t71_public_safe_area.mts');
 await import('./t59_purchase_simulation.mts');
 await import('./t70_open_finance_links.mts');
 await import('./t71_menu_cleanup.mts');
+await import('./t73_open_finance_savings.mts');
 await import('./t72_investment_contribution.mts');
 // Suites that no runner called before the tests moved into the repository.
 await import('./t30_bills_checklist.mts');
