@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { apiClient } from '../../utils/api';
 import { buildLinksBody, type LinksDraft, type LinksItem } from '../../utils/openFinanceLinks';
 import { buildSavingsBody, type SavingsRow, type SavingsServer } from '../../utils/openFinanceSavings';
+import type { BalanceGap } from '../../utils/homeMobile';
 
 /** The envelope apiClient returns is the response body: { success, data }. */
 const bodyOf = <T>(response: unknown): { data?: T } => (response ?? {}) as { data?: T };
@@ -101,5 +102,20 @@ export function useSaveOpenFinanceSavings(householdId: string | undefined) {
       return bodyOf<{ savings: SavingsServer[] }>(response).data?.savings ?? [];
     },
     onSuccess: (savings) => queryClient.setQueryData(savingsKey(householdId), savings),
+  });
+}
+
+/** GET /open-finance/balances: the bank balance of the last import against each linked account (database only). */
+export function useOpenFinanceBalances(householdId: string | undefined) {
+  const { currentUser } = useAuth();
+  return useQuery({
+    queryKey: ['open-finance', 'balances', householdId ?? null],
+    enabled: !!currentUser && !!householdId,
+    queryFn: async () => {
+      const body = bodyOf<{ balances: BalanceGap[] }>(await apiClient.get('/open-finance/balances', { householdId }));
+      return body.data?.balances ?? [];
+    },
+    refetchOnWindowFocus: false,
+    retry: false,
   });
 }

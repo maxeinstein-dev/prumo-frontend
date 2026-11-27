@@ -294,8 +294,25 @@ export function invoiceDueText(dueDate: string, today: string): string {
 
 /* ---------- faixas de aviso ---------- */
 
+/** The balance check of one linked account (GET /open-finance/balances, P25 L3). */
+export interface BalanceGap {
+  prumoAccountId: string;
+  accountName: string;
+  /** bank - Prumo, in cents. */
+  diffCents: number;
+  estimated: boolean;
+  alert: boolean;
+}
+
+/** "R$ 1.234,56" without the sign (the text says more or less). */
+function brl(cents: number): string {
+  const abs = Math.abs(Math.round(cents));
+  const reais = Math.floor(abs / 100).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `R$ ${reais},${String(abs % 100).padStart(2, '0')}`;
+}
+
 export interface WarningStrip {
-  id: 'captures' | 'negative';
+  id: 'captures' | 'negative' | `balance:${string}`;
   title: string;
   subtitle: string;
   /** Route the strip opens. */
@@ -303,7 +320,7 @@ export interface WarningStrip {
 }
 
 /** The strips of the Início: shown only when there is something to say, and only facts. */
-export function warningStrips(input: { captures: number; negativeDate: string | null }): WarningStrip[] {
+export function warningStrips(input: { captures: number; negativeDate: string | null; balances?: readonly BalanceGap[] }): WarningStrip[] {
   const strips: WarningStrip[] = [];
   const captures = Number.isFinite(input.captures) ? Math.floor(input.captures) : 0;
   if (captures > 0) {
@@ -312,6 +329,15 @@ export function warningStrips(input: { captures: number; negativeDate: string | 
       title: `${captures} ${captures === 1 ? 'captura' : 'capturas'} a confirmar`,
       subtitle: 'Notificações do banco esperando você',
       to: '/app/transactions',
+    });
+  }
+  for (const gap of input.balances ?? []) {
+    if (!gap.alert || !Number.isFinite(gap.diffCents) || gap.diffCents === 0) continue;
+    strips.push({
+      id: `balance:${gap.prumoAccountId}`,
+      title: `${gap.accountName}: saldo diferente do banco`,
+      subtitle: `O banco tem ${brl(gap.diffCents)} a ${gap.diffCents > 0 ? 'mais' : 'menos'} que o Prumo${gap.estimated ? ' (com estimativa do cofrinho)' : ''}`,
+      to: '/app/accounts',
     });
   }
   if (isDayKey(input.negativeDate)) {
