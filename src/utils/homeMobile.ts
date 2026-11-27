@@ -9,6 +9,7 @@
 import { addDays, isDayKey, monthLabel, shortDate, toCents, type CashFlowEvent } from './cashFlow';
 import type { Bill } from './billsChecklist';
 import { reserveText } from './savingsGoalsPlan';
+import { mismatchText, portfolioMismatches, type PortfolioCheck } from './openFinancePortfolio';
 
 /** Formats an amount given in whole cents (the screen passes its own currency formatter). */
 export type CentsFormatter = (cents: number) => string;
@@ -314,7 +315,7 @@ function brl(cents: number): string {
 }
 
 export interface WarningStrip {
-  id: 'captures' | 'negative' | `balance:${string}`;
+  id: 'captures' | 'negative' | `balance:${string}` | `portfolio:${string}`;
   title: string;
   subtitle: string;
   /** Route the strip opens. */
@@ -322,7 +323,12 @@ export interface WarningStrip {
 }
 
 /** The strips of the Início: shown only when there is something to say, and only facts. */
-export function warningStrips(input: { captures: number; negativeDate: string | null; balances?: readonly BalanceGap[] }): WarningStrip[] {
+export function warningStrips(input: {
+  captures: number;
+  negativeDate: string | null;
+  balances?: readonly BalanceGap[];
+  portfolios?: readonly PortfolioCheck[];
+}): WarningStrip[] {
   const strips: WarningStrip[] = [];
   const captures = Number.isFinite(input.captures) ? Math.floor(input.captures) : 0;
   if (captures > 0) {
@@ -342,6 +348,17 @@ export function warningStrips(input: { captures: number; negativeDate: string | 
         `O banco tem ${brl(gap.diffCents)} a ${gap.diffCents > 0 ? 'mais' : 'menos'} que o Prumo${gap.estimated ? ' (com estimativa do cofrinho)' : ''}` +
         (gap.pendingCents ? ` · ${brl(gap.pendingCents)} em rascunhos na caixa` : ''),
       to: '/app/accounts',
+    });
+  }
+  // P25 L5: only a quantity difference or an asset on one side warns (a buy or sale missing in Prumo).
+  for (const check of input.portfolios ?? []) {
+    const mismatches = portfolioMismatches(check);
+    if (mismatches.length === 0) continue;
+    strips.push({
+      id: `portfolio:${check.prumoAccountId}`,
+      title: `${check.accountName}: carteira diferente do banco`,
+      subtitle: mismatchText(mismatches[0]) + (mismatches.length > 1 ? ` · e mais ${mismatches.length - 1}` : ''),
+      to: `/app/investments/${check.prumoAccountId}`,
     });
   }
   if (isDayKey(input.negativeDate)) {
