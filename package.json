@@ -42,7 +42,6 @@
   "devDependencies": {
     "@capacitor/android": "^8.6.0",
     "@capacitor/cli": "^8.6.0",
-    "@tanstack/react-query-devtools": "^5.91.2",
     "@types/canvas-confetti": "^1.6.4",
     "@types/node": "^20.11.0",
     "@types/react": "^18.3.3",
