@@ -6,6 +6,7 @@ import { useSelectedMonth } from '../../context/SelectedMonthContext';
 import { useDefaultHousehold } from '../../hooks/useDefaultHousehold';
 import { useAccounts } from '../../hooks/api/useAccounts';
 import { useCapturesCount } from '../../hooks/api/useCaptures';
+import { useOpenFinanceBalances } from '../../hooks/api/useOpenFinance';
 import { useDashboardOverview, useTransactions } from '../../hooks/api/useTransactions';
 import { useCashFlow } from '../../hooks/api/useCashFlow';
 import SpendableCard from '../cashflow/SpendableCard';
@@ -129,7 +130,8 @@ export default function MobileHome() {
   const bills = useMemo(() => (data && today ? buildBills(events, today, doneKeys) : []), [data, today, events, doneKeys]);
   const invoice = useMemo(() => (today ? nextInvoice(events, today) : null), [events, today]);
   const negativeDate = useMemo(() => (data ? firstNegativeDate(buildDailySeries(data)) : null), [data]);
-  const strips = warningStrips({ captures: captures.data ?? 0, negativeDate });
+  const balances = useOpenFinanceBalances(householdId ?? undefined);
+  const strips = warningStrips({ captures: captures.data ?? 0, negativeDate, balances: balances.data ?? [] });
 
   // The leftover is a forecast: what is posted in the month plus what the cash flow still projects for it (recurrences,
   // payroll, invoices). The current month reuses the 30-day answer above; a future month asks the shortest period that
@@ -214,9 +216,9 @@ export default function MobileHome() {
           type="button"
           onClick={() => navigate(strip.to)}
           data-testid={`home-strip-${strip.id}`}
-          className={`flex w-full ${TOUCH} items-center gap-3 rounded-2xl p-3 text-left ${strip.id === 'negative' ? 'bg-rc-redSoft' : 'bg-rc-accentSoft'}`}
+          className={`flex w-full ${TOUCH} items-center gap-3 rounded-2xl p-3 text-left ${strip.id === 'captures' ? 'bg-rc-accentSoft' : 'bg-rc-redSoft'}`}
         >
-          {strip.id === 'negative' ? <AlertTriangle className="h-5 w-5 flex-none text-rc-red" aria-hidden="true" /> : <Inbox className="h-5 w-5 flex-none text-rc-accentInk" aria-hidden="true" />}
+          {strip.id !== 'captures' ? <AlertTriangle className="h-5 w-5 flex-none text-rc-red" aria-hidden="true" /> : <Inbox className="h-5 w-5 flex-none text-rc-accentInk" aria-hidden="true" />}
           <span className="min-w-0 flex-1 text-sm text-rc-ink">
             <b className="block font-semibold">{strip.title}</b>
             <span className="block text-rc-ink2">{strip.subtitle}</span>
