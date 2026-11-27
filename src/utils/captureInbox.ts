@@ -119,7 +119,8 @@ export function formatCaptureDateTime(iso: string | null | undefined): string {
  * Apps the phone reads that have no account rules (CAPTURE_APPS feeds the rules screen, app by kind): only a label.
  * XP (P21 L7) gives investment drafts, never transactions.
  */
-const OTHER_APP_LABELS: Record<string, string> = { 'br.com.xp.carteira': 'XP' };
+// Open Finance drafts (P25) come from the daily import of the bank, not from a phone app.
+const OTHER_APP_LABELS: Record<string, string> = { 'br.com.xp.carteira': 'XP', 'open-finance': 'Open Finance' };
 
 export function appLabel(pkg: string): string {
   return CAPTURE_APPS.find((app) => app.package === pkg)?.label ?? OTHER_APP_LABELS[pkg] ?? pkg;

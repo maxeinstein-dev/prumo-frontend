@@ -21,6 +21,8 @@ import {
   type LinksItem,
 } from '../../utils/openFinanceLinks';
 import SelectCombobox from '../SelectCombobox';
+import { syncText } from '../../utils/openFinanceSavings';
+import OpenFinanceSavingsSection from './OpenFinanceSavingsSection';
 import { BTN_PRIMARY, BTN_SECONDARY, BTN_SECONDARY_SM, ERROR_CLS, INPUT_CLS, MUTED_CLS } from '../people/ui';
 
 const TOUCH = 'min-h-[44px]';
@@ -238,6 +240,8 @@ const OpenFinanceCard = ({ householdId, canEdit }: OpenFinanceCardProps) => {
                 </div>
               )}
 
+              <p className={`text-xs font-light mb-2 ${MUTED_CLS}`}>{syncText({ lastSyncAt: item.lastSyncAt ?? null, lastError: item.lastError ?? null })}</p>
+              {item.lastError && <p role="alert" className={`${ERROR_CLS} mb-3`}>{item.lastError}</p>}
               {item.error !== null && <p className={`${ERROR_CLS} mb-3`}>{TX.itemError}</p>}
               {orphans > 0 && <p className={`text-xs font-light mb-3 ${MUTED_CLS}`}>{TX.orphan(orphans)}</p>}
 
@@ -305,6 +309,8 @@ const OpenFinanceCard = ({ householdId, canEdit }: OpenFinanceCardProps) => {
           {newItemError && <p role="alert" className={`${ERROR_CLS} mt-1`}>{newItemError}</p>}
         </div>
       )}
+
+      <OpenFinanceSavingsSection householdId={householdId} canEdit={canEdit} />
     </div>
   );
 };

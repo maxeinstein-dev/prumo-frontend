@@ -30,6 +30,10 @@ export interface LinksItem {
   error: string | null;
   accounts: PluggyLinkAccount[];
   orphanLinks: Array<{ pluggyAccountId: string; accountId: string | null }>;
+  /** Last successful daily import of this connection (ISO); null = not yet. */
+  lastSyncAt?: string | null;
+  /** Why the last import could not read it (e.g. expired authorization). */
+  lastError?: string | null;
 }
 
 export interface PrumoAccount {
