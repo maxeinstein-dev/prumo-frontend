@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { lazy, Suspense, ReactNode, Component, ErrorInfo, ReactElement } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { TransactionsProvider } from './context/TransactionsContext';
 import { ToastProvider } from './context/ToastContext';
@@ -278,7 +277,6 @@ function App() {
         </AuthProvider>
       </Router>
       {/* React Query DevTools - só aparece em desenvolvimento */}
-      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
 }

@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart3, CreditCard, List, LogOut, LucideIcon, MessageCircle, MessageSquare, Plus, RefreshCw, TrendingUp, User, Users, X } from 'lucide-react';
+import { BarChart3, CreditCard, List, LogOut, LucideIcon, Plus, RefreshCw, TrendingUp, User, Users, X } from 'lucide-react';
 import { useI18n } from '../../context/I18nContext';
 import { cashFlowText } from '../../utils/cashFlowTexts';
 import { incomeText } from '../../utils/incomeTexts';
@@ -27,7 +27,6 @@ import {
   usesMonthSelector,
 } from '../../utils/mobileShell';
 
-export const COMMUNITY_URL = 'https://www.reddit.com/r/RectaApp/';
 
 const TAB_ICONS: Record<TabId, LucideIcon> = {
   home: BarChart3,
@@ -45,7 +44,6 @@ interface MobileShellProps {
   householdSelector: ReactNode;
   /** The invites bell, in the header's right corner. */
   invitesNotification: ReactNode;
-  onOpenFeedback: () => void;
   onLogout: () => void;
 }
 
@@ -89,7 +87,6 @@ const MobileShell = ({
   pendingCaptures,
   householdSelector,
   invitesNotification,
-  onOpenFeedback,
   onLogout,
 }: MobileShellProps) => {
   const { t } = useI18n();
@@ -291,31 +288,6 @@ const MobileShell = ({
                   </li>
                 );
               })}
-              <li>
-                <a
-                  href={COMMUNITY_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={closeMore}
-                  className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-[15px] text-rc-ink"
-                >
-                  <MessageSquare className="h-5 w-5 text-rc-ink3" aria-hidden="true" />
-                  {dict.community ?? 'Comunidade'}
-                </a>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => {
-                    closeMore();
-                    onOpenFeedback();
-                  }}
-                  className="flex min-h-[52px] w-full items-center gap-3 rounded-xl px-3 text-left text-[15px] font-medium text-purple-700 dark:text-purple-300"
-                >
-                  <MessageCircle className="h-5 w-5" aria-hidden="true" />
-                  {dict.giveFeedback ?? 'Dê seu feedback'}
-                </button>
-              </li>
             </ul>
 
             <div className="mt-3 border-t border-rc-line pt-3">{householdSelector}</div>
